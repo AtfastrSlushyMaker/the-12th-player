@@ -139,12 +139,14 @@ export default function SeasonRankings() {
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-            <span className="text-xs text-muted-green">Europa League (5)</span>
+            <span className="text-xs text-muted-green">Europa League (5{selectedSeason < '2021-22' ? '-6' : ''})</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-            <span className="text-xs text-muted-green">Conference League (6)</span>
-          </div>
+          {selectedSeason >= '2021-22' && (
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+              <span className="text-xs text-muted-green">Conference League (6)</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500"></div>
             <span className="text-xs text-muted-green">Relegation (18-20)</span>
@@ -170,10 +172,17 @@ export default function SeasonRankings() {
             <tbody>
               {data.predictions.sort((a,b) => a.rank - b.rank).map(row => {
                 // Determine zone based on predicted position
+                // Conference League started in 2021-22 season
+                const hasConferenceLeague = selectedSeason >= '2021-22';
                 const getZone = (rank: number) => {
                   if (rank <= 4) return { label: 'Champions League', color: 'bg-blue-100 text-blue-700 border-blue-300', dot: 'bg-blue-500' };
                   if (rank === 5) return { label: 'Europa League', color: 'bg-orange-100 text-orange-700 border-orange-300', dot: 'bg-orange-500' };
-                  if (rank === 6) return { label: 'Conference League', color: 'bg-emerald-100 text-emerald-700 border-emerald-300', dot: 'bg-emerald-500' };
+                  if (rank === 6) {
+                    if (hasConferenceLeague) {
+                      return { label: 'Conference League', color: 'bg-emerald-100 text-emerald-700 border-emerald-300', dot: 'bg-emerald-500' };
+                    }
+                    return { label: 'Europa League', color: 'bg-orange-100 text-orange-700 border-orange-300', dot: 'bg-orange-500' };
+                  }
                   if (rank >= 18) return { label: 'Relegation', color: 'bg-red-100 text-red-700 border-red-300', dot: 'bg-red-500' };
                   return { label: 'Mid-Table', color: 'bg-gray-100 text-gray-600 border-gray-300', dot: 'bg-gray-400' };
                 };
@@ -183,7 +192,7 @@ export default function SeasonRankings() {
                 const getRowBorder = (rank: number) => {
                   if (rank <= 4) return 'border-l-4 border-l-blue-500';
                   if (rank === 5) return 'border-l-4 border-l-orange-500';
-                  if (rank === 6) return 'border-l-4 border-l-emerald-500';
+                  if (rank === 6) return hasConferenceLeague ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-orange-500';
                   if (rank >= 18) return 'border-l-4 border-l-red-500';
                   return '';
                 };
