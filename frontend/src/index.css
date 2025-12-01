@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    /* Removed undefined Tailwind class 'border-border'. If a global border color is needed,
+       define it explicitly or apply a concrete class like border-white/10 where required. */
+  }
+
+  body {
+    /* Light football pitch-inspired background */
+    @apply min-h-screen relative text-[#0d1b0d] bg-[#f4fff4];
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Subtle pitch pattern overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(13, 107, 23, 0.08), rgba(13, 107, 23, 0.08)),
+      repeating-linear-gradient(to right,
+        rgba(13, 107, 23, 0.18) 0px,
+        rgba(13, 107, 23, 0.18) 6px,
+        transparent 6px,
+        transparent 120px),
+      repeating-linear-gradient(to bottom,
+        rgba(13, 107, 23, 0.10) 0px,
+        rgba(13, 107, 23, 0.10) 4px,
+        transparent 4px,
+        transparent 80px);
+    mix-blend-mode: multiply;
+    opacity: 0.35;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+}
+
+@layer components {
+
+  /* Premier League Brand Palette */
+  /* Football Green Theme (repurposed former PL classes) */
+  .pl-gradient-primary {
+    @apply bg-gradient-to-r from-[#0b6623] to-[#2ecc71];
+  }
+
+  .pl-gradient-text {
+    @apply bg-gradient-to-r from-[#0b6623] to-[#2ecc71] bg-clip-text text-transparent;
+  }
+
+  .pl-btn-primary {
+    @apply px-6 py-3 rounded-xl font-semibold pl-gradient-primary text-white shadow-md shadow-[#0b6623]/30 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .pl-badge {
+    @apply px-3 py-1 rounded-md text-xs font-semibold bg-[#e9f9ec] text-[#0b6623] border border-[#2ecc71]/40;
+  }
+
+  .pl-bar-bg {
+    @apply h-full bg-gradient-to-r from-[#0b6623] to-[#2ecc71] rounded-full;
+  }
+
+  .pl-card-accent {
+    @apply relative overflow-hidden rounded-2xl border border-[#0b6623]/15 bg-white backdrop-blur;
+  }
+
+  .pl-card-accent::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity;
+    background: linear-gradient(120deg, #0b662311, #2ecc7111);
+  }
+
+  .pl-card-accent:hover::before {
+    opacity: .35;
+  }
+
+  /* Additional football utilities */
+  .text-muted-green {
+    @apply text-[#4f6b4f];
+  }
+
+  .stat-green {
+    @apply text-[#0b6623];
+  }
+
+  .stat-gold {
+    @apply text-[#c9a227];
+  }
+
+  .panel-light {
+    @apply bg-[#e9f9ec] border border-[#0b6623]/15 rounded-2xl;
+  }
+
+  /* Glassmorphism Cards */
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl rounded-2xl border border-[#0b6623]/10 shadow-lg;
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300 hover:bg-white hover:border-[#0b6623]/30 hover:shadow-[#2ecc71]/30 hover:shadow-xl;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-[#0b6623] to-[#2ecc71] hover:brightness-110 transform hover:scale-105 transition-all duration-200 shadow-lg shadow-[#0b6623]/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-xl font-semibold bg-[#e9f9ec] hover:bg-[#d2f3d8] border border-[#0b6623]/10 hover:border-[#0b6623]/30 text-[#0b6623] transform hover:scale-105 transition-all duration-200;
+  }
+
+  /* Input Fields */
+  .input-glass {
+    @apply w-full px-4 py-3 rounded-xl bg-white border border-[#0b6623]/20 focus:border-[#0b6623] focus:ring-2 focus:ring-[#2ecc71]/30 outline-none transition-all text-[#0d1b0d] placeholder-[#4f6b4f];
+  }
+
+  /* Gradient Text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-[#0b6623] via-[#2ecc71] to-[#0b6623] bg-clip-text text-transparent animate-pulse-slow;
+  }
+
+  /* Mode Badges */
+  .mode-badge-active {
+    @apply px-4 py-2 rounded-xl bg-gradient-to-r from-[#0b6623] to-[#2ecc71] text-white text-sm font-semibold shadow-lg shadow-[#0b6623]/30 transition-all;
+  }
+
+  .mode-badge-inactive {
+    @apply px-4 py-2 rounded-xl bg-[#e9f9ec] border border-[#0b6623]/15 hover:bg-[#d2f3d8] text-[#0b6623] text-sm font-semibold transition-all;
+  }
+
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out backwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes bounceSlow {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .animate-bounce-slow {
+    animation: bounceSlow 3s ease-in-out infinite;
+  }
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-[#e0f5e0];
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-[#2ecc71]/40 rounded-full hover:bg-[#2ecc71]/60;
+  }
+}

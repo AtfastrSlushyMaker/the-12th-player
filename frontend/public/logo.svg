@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Shield Background -->
+  <path d="M50 5 L90 20 L90 55 C90 75 70 90 50 95 C30 90 10 75 10 55 L10 20 Z" fill="url(#shieldGrad)" stroke="#064e14" stroke-width="2"/>
+  
+  <!-- Inner Shield -->
+  <path d="M50 12 L82 24 L82 53 C82 70 65 82 50 86 C35 82 18 70 18 53 L18 24 Z" fill="#ffffff"/>
+  
+  <!-- Number 12 -->
+  <text x="50" y="62" font-family="Georgia, serif" font-size="36" font-weight="bold" fill="#0b6623" text-anchor="middle">12</text>
+  
+  <!-- Three stars above -->
+  <polygon points="35,22 37,28 43,28 38,32 40,38 35,34 30,38 32,32 27,28 33,28" fill="#c9a227"/>
+  <polygon points="50,18 52,24 58,24 53,28 55,34 50,30 45,34 47,28 42,24 48,24" fill="#c9a227"/>
+  <polygon points="65,22 67,28 73,28 68,32 70,38 65,34 60,38 62,32 57,28 63,28" fill="#c9a227"/>
+  
+  <!-- Bottom accent -->
+  <path d="M30 72 L70 72" stroke="#c9a227" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <!-- Gradient -->
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#15803d"/>
+      <stop offset="100%" style="stop-color:#0b6623"/>
+    </linearGradient>
+  </defs>
+</svg>
