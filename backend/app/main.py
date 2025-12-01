@@ -15,7 +15,11 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "*"],  # Add production URL later
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://the-12th-player-app.onrender.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
