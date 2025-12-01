@@ -16,13 +16,22 @@ export default function Footer() {
 
                     <div className="flex items-center space-x-6">
                         <a
-                            href="https://github.com"
+                            href="https://github.com/AtfastrSlushyMaker/the-12th-player"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center space-x-2 text-muted-green hover:stat-green transition-colors"
                         >
                             <Github className="w-5 h-5" />
-                            <span className="text-sm">GitHub</span>
+                            <span className="text-sm">App</span>
+                        </a>
+                        <a
+                            href="https://github.com/AtfastrSlushyMaker/pl-standings-prediction-project"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center space-x-2 text-muted-green hover:stat-green transition-colors"
+                        >
+                            <Github className="w-5 h-5" />
+                            <span className="text-sm">ML Models</span>
                         </a>
                         <div className="flex items-center space-x-2 text-muted-green">
                             <span className="text-sm">Made with</span>
