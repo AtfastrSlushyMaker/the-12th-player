@@ -4,6 +4,8 @@
 
 🔗 **Live Demo**: [the-12th-player-app.onrender.com](https://the-12th-player-app.onrender.com/)
 
+📊 **ML Models & Data**: [pl-standings-prediction-project](https://github.com/AtfastrSlushyMaker/pl-standings-prediction-project)
+
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi)
@@ -106,6 +108,8 @@ The app will be available at:
 - Market value estimates and performance metrics
 
 ## 🤖 Models
+
+All machine learning models were developed in the [pl-standings-prediction-project](https://github.com/AtfastrSlushyMaker/pl-standings-prediction-project) repository, which contains the full data analysis, preprocessing, and model training notebooks.
 
 | Model | Algorithm | Performance | Features |
 |-------|-----------|-------------|----------|
