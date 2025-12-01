@@ -1,22 +1,24 @@
 # The 12th Player ⚽
 
-A comprehensive football analytics platform powered by machine learning, providing intelligent predictions and insights for European football.
+> **AI-powered football analytics platform for predictions, insights, and talent scouting across Europe's top leagues.**
+
+🔗 **Live Demo**: [the-12th-player-app.onrender.com](https://the-12th-player-app.onrender.com/)
 
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi)
 ![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python)
 
-## 🎯 Overview
+---
 
-**The 12th Player** is a full-stack football analytics application that leverages machine learning to deliver four key business objectives:
+## 🎯 What is The 12th Player?
 
-| Objective | Feature | Model | Description |
-|-----------|---------|-------|-------------|
-| **BO1** | Season Rankings | KNN Regressor | Predicts final league standings (positions 1-20) |
-| **BO2** | Match Predictor | Random Forest | Predicts match outcomes (Home Win/Draw/Away Win) |
-| **BO3** | Team Styles | KMeans Clustering | Classifies teams into 5 tactical playing styles |
-| **BO4** | Player Scout | LightGBM | Recommends rising talent across Europe's top 5 leagues |
+A full-stack machine learning application that provides:
+
+- **Season Rankings** — Predict final Premier League standings using KNN
+- **Match Predictor** — Forecast match outcomes with Random Forest  
+- **Team Styles** — Classify tactical playing styles using KMeans clustering
+- **Player Scout** — Discover rising talent across 5 European leagues with LightGBM
 
 ## 🏗️ Architecture
 
@@ -173,5 +175,6 @@ MIT
 ---
 
 <p align="center">
-  <strong>The 12th Player</strong> - Your AI-powered football analyst 🧠⚽
+  <strong>The 12th Player</strong> — Your AI-powered football analyst 🧠⚽<br>
+  <a href="https://the-12th-player-app.onrender.com/">Try it live →</a>
 </p>
