@@ -233,6 +233,34 @@ export const getPlayerPositions = async (): Promise<PlayerPositionsResponse> => 
     return response.data;
 };
 
+// BO5: News Credibility Classification
+export interface NewsCredibilityResponse {
+    title: string;
+    predicted_tier: number;
+    tier_label: string;
+    confidence: number;
+    probabilities: {
+        tier_1: number;
+        tier_2: number;
+        tier_3: number;
+        tier_4: number;
+    };
+    credibility_description: string;
+}
+
+export const classifyNews = async (title: string, text: string): Promise<NewsCredibilityResponse> => {
+    const response = await api.post('/api/v1/classify-news', {}, {
+        params: { title, text }
+    });
+    return response.data;
+};
+
+// Get next season forecast
+export const getNextSeasonForecast = async () => {
+    const response = await api.get('/api/v1/forecast-next-season');
+    return response.data;
+};
+
 // Get all teams
 export const getTeams = async (): Promise<string[]> => {
     // Mock data - in production, this would come from the API
@@ -243,3 +271,4 @@ export const getTeams = async (): Promise<string[]> => {
         'Nottingham Forest', 'Southampton', 'Tottenham', 'West Ham', 'Wolves'
     ];
 };
+

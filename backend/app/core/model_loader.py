@@ -51,6 +51,11 @@ def load_bo4(position: str) -> Dict[str, Any]:
     
     return joblib.load(MODELS_DIR / f"bo4_{position.lower()}_lgb.pkl")
 
+@lru_cache()
+def load_naive_bayes_news_classifier() -> Dict[str, Any]:
+    """Load BO5 Naive Bayes News Credibility Classifier"""
+    return joblib.load(MODELS_DIR / "naive_bayes_news_classifier.pkl")
+
 def get_model_info(model_data: Dict[str, Any]) -> Dict[str, Any]:
     """Extract metadata from model dictionary"""
     return {

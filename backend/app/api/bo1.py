@@ -79,6 +79,109 @@ async def get_seasons():
             detail=f"Failed to load seasons: {str(e)}"
         )
 
+
+@router.get("/forecast-next-season")
+async def forecast_next_season():
+    """
+    Forecast the next Premier League season standings.
+    
+    Uses the latest available season's current standings as input to predict next season.
+    
+    **Model**: KNN Regressor (uses historical trends and current performance)
+    
+    **Output**: Predicted final positions for next season (1-20)
+    """
+    try:
+        # Get latest season data
+        seasons = get_available_seasons()
+        if not seasons:
+            raise ValueError("No season data available")
+        
+        latest_season = seasons[0]
+        team_stats_list = get_team_stats_for_season(latest_season)
+        
+        # Load model
+        model_data = load_bo1()
+        model = model_data['model']
+        scaler = model_data.get('scaler')
+        feature_names = model_data['features']
+        metadata = model_data.get('metadata', {})
+        
+        # Prepare features and predict for each team
+        predictions_list = []
+        
+        for team_stat in team_stats_list:
+            # Engineer features from current season stats
+            features = prepare_season_ranking_features(team_stat)
+            
+            # Get feature names from scaler if available
+            if scaler and hasattr(scaler, 'feature_names_in_'):
+                actual_features = scaler.feature_names_in_.tolist()
+            else:
+                actual_features = feature_names
+            
+            # Add any missing features
+            for feat in actual_features:
+                if feat not in features:
+                    if feat == 'Clean_Sheets':
+                        features[feat] = team_stat.get('clean_sheets', 0)
+            
+            # Create DataFrame with correct feature order
+            X = pd.DataFrame([features])[actual_features]
+            
+            # Scale if scaler exists
+            if scaler:
+                X_scaled = scaler.transform(X)
+            else:
+                X_scaled = X.values
+            
+            # Predict position
+            predicted_position = model.predict(X_scaled)[0]
+            predicted_position = np.clip(predicted_position, 1, 20)
+            
+            predictions_list.append({
+                'team': team_stat['team'],
+                'predicted_position': float(predicted_position)
+            })
+        
+        # Sort by predicted position and assign ranks
+        predictions_list.sort(key=lambda x: x['predicted_position'])
+        
+        ranked_predictions = []
+        for rank, pred in enumerate(predictions_list, start=1):
+            mae = metadata.get('mae', 1.15)
+            confidence = assign_confidence_level(mae, pred['predicted_position'])
+            
+            ranked_predictions.append({
+                "rank": rank,
+                "team": pred['team'],
+                "predicted_position": rank,
+                "raw_prediction": round(pred['predicted_position'], 2),
+                "confidence": confidence
+            })
+        
+        # Determine next season year
+        current_year = int(latest_season.split('-')[0])
+        next_season = f"{current_year + 1}-{current_year + 2}"
+        
+        return {
+            "season": next_season,
+            "based_on_season": latest_season,
+            "predictions": ranked_predictions,
+            "model_metadata": {
+                "algorithm": metadata.get('algorithm', 'KNN Regressor'),
+                "mae": metadata.get('mae'),
+                "r2_score": metadata.get('r2_score'),
+                "note": "Forecast based on current season performance trends"
+            }
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Forecast failed: {str(e)}"
+        )
+
 @router.get("/predict-season/{season}")
 async def predict_season_from_data(
     season: str,

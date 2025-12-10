@@ -175,3 +175,39 @@ class PlayerRecommendationsResponse(BaseModel):
                 ]
             }
         }
+
+# ===== BO5: News Credibility Classification =====
+
+class NewsTierProbability(BaseModel):
+    """Probability scores for each credibility tier"""
+    tier_1: float = Field(..., ge=0, le=1, description="Tier 1 - Official sources (BBC, ESPN, etc.)")
+    tier_2: float = Field(..., ge=0, le=1, description="Tier 2 - Reliable journalists")
+    tier_3: float = Field(..., ge=0, le=1, description="Tier 3 - Tabloids and blogs")
+    tier_4: float = Field(..., ge=0, le=1, description="Tier 4 - Social media and unverified")
+
+class NewsCredibilityResponse(BaseModel):
+    """Response for news article credibility classification"""
+    title: str
+    predicted_tier: int = Field(..., ge=1, le=4, description="Predicted credibility tier (1-4)")
+    tier_label: str = Field(..., description="Human-readable tier label")
+    confidence: float = Field(..., ge=0, le=1, description="Confidence in prediction")
+    probabilities: NewsTierProbability
+    credibility_description: str = Field(..., description="Description of credibility tier")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "title": "Is there any way back for Salah and Liverpool?",
+                "predicted_tier": 1,
+                "tier_label": "Tier 1 - Official Source",
+                "confidence": 0.87,
+                "probabilities": {
+                    "tier_1": 0.87,
+                    "tier_2": 0.08,
+                    "tier_3": 0.04,
+                    "tier_4": 0.01
+                },
+                "credibility_description": "Official news source - BBC Sport, official club statements, verified journalists"
+            }
+        }
+

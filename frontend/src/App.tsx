@@ -6,6 +6,7 @@ import MatchPredictor from './pages/MatchPredictor';
 import SeasonRankings from './pages/SeasonRankings';
 import TeamStyles from './pages/TeamStyles';
 import PlayerScout from './pages/PlayerScout';
+import NewsClassifier from './pages/NewsClassifier';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
             <Route path="/season-rankings" element={<SeasonRankings />} />
             <Route path="/team-styles" element={<TeamStyles />} />
             <Route path="/player-scout" element={<PlayerScout />} />
+            <Route path="/news-classifier" element={<NewsClassifier />} />
           </Routes>
         </main>
         <Footer />
@@ -28,3 +30,4 @@ function App() {
 }
 
 export default App;
+

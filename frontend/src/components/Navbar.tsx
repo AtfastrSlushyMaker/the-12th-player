@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Trophy, Zap, Users, Target, Menu, X, Sparkles } from 'lucide-react';
+import { Trophy, Zap, Users, Target, Menu, X, Sparkles, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 
@@ -13,6 +13,7 @@ export default function Navbar() {
         { path: '/match-predictor', label: 'Predictor', icon: Zap },
         { path: '/team-styles', label: 'Team Styles', icon: Users },
         { path: '/player-scout', label: 'Scout', icon: Trophy },
+        { path: '/news-classifier', label: 'News', icon: Shield },
     ];
 
     return (
