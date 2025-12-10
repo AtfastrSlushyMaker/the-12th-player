@@ -45,6 +45,7 @@ export const teamLogos: Record<string, string> = {
   'Newcastle United': 'https://resources.premierleague.com/premierleague/badges/50/t4.png',
   'Nottingham Forest': 'https://resources.premierleague.com/premierleague/badges/50/t17.png',
   "Nott'm Forest": 'https://resources.premierleague.com/premierleague/badges/50/t17.png',
+  'Nottm Forest': 'https://resources.premierleague.com/premierleague/badges/50/t17.png',
   'Southampton': 'https://resources.premierleague.com/premierleague/badges/50/t20.png',
   'Tottenham': 'https://resources.premierleague.com/premierleague/badges/50/t6.png',
   'Tottenham Hotspur': 'https://resources.premierleague.com/premierleague/badges/50/t6.png',

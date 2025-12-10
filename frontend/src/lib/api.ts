@@ -255,6 +255,12 @@ export const classifyNews = async (title: string, text: string): Promise<NewsCre
     return response.data;
 };
 
+// Get 2025-26 season forecast
+export const getForecast202526 = async (): Promise<SeasonRankingResponse> => {
+    const response = await api.get('/api/v1/forecast-2025-26');
+    return response.data;
+};
+
 // Get next season forecast
 export const getNextSeasonForecast = async () => {
     const response = await api.get('/api/v1/forecast-next-season');
@@ -266,9 +272,9 @@ export const getTeams = async (): Promise<string[]> => {
     // Mock data - in production, this would come from the API
     return [
         'Arsenal', 'Aston Villa', 'Bournemouth', 'Brentford', 'Brighton',
-        'Chelsea', 'Crystal Palace', 'Everton', 'Fulham', 'Ipswich',
-        'Leicester', 'Liverpool', 'Man City', 'Man United', 'Newcastle',
-        'Nottingham Forest', 'Southampton', 'Tottenham', 'West Ham', 'Wolves'
+        'Burnley', 'Chelsea', 'Crystal Palace', 'Everton', 'Fulham',
+        'Leeds United', 'Liverpool', 'Man City', 'Man United', 'Newcastle',
+        'Nottingham Forest', 'Sunderland', 'Tottenham', 'West Ham', 'Wolves'
     ];
 };
 

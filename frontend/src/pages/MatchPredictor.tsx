@@ -16,9 +16,9 @@ export default function MatchPredictor() {
 
     const teams = [
         'Arsenal', 'Aston Villa', 'Bournemouth', 'Brentford', 'Brighton',
-        'Chelsea', 'Crystal Palace', 'Everton', 'Fulham', 'Ipswich',
-        'Leicester', 'Liverpool', 'Man City', 'Man United', 'Newcastle',
-        'Nottingham Forest', 'Southampton', 'Tottenham', 'West Ham', 'Wolves'
+        'Burnley', 'Chelsea', 'Crystal Palace', 'Everton', 'Fulham',
+        'Leeds United', 'Liverpool', 'Man City', 'Man United', 'Newcastle',
+        'Nottingham Forest', 'Sunderland', 'Tottenham', 'West Ham', 'Wolves'
     ];
 
     const handlePredict = async () => {

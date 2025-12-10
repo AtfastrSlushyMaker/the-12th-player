@@ -84,7 +84,7 @@
 
   /* Additional football utilities */
   .text-muted-green {
-    @apply text-[#4f6b4f];
+    @apply text-[#3d5a3d];
   }
 
   .stat-green {

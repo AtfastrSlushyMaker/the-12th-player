@@ -138,7 +138,7 @@ export default function PlayerScout() {
                     {rec.league && (
                       <div className="flex items-center gap-1 mt-0.5">
                         <img src={getLeagueLogo(rec.league)} alt={rec.league} className="w-3 h-3 object-contain" />
-                        <span className="text-[10px] text-gray-400">{rec.league}</span>
+                        <span className="text-[10px] text-[#5a6b5a]">{rec.league}</span>
                       </div>
                     )}
                   </div>

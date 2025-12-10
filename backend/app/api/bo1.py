@@ -182,6 +182,121 @@ async def forecast_next_season():
             detail=f"Forecast failed: {str(e)}"
         )
 
+
+@router.get("/forecast-2025-26")
+async def forecast_2025_26():
+    """
+    Forecast 2025-26 Premier League season standings.
+    
+    Uses current 2024-25 season standings (as of December 2025) to predict final 2025-26 positions.
+    
+    **Model**: KNN Regressor
+    
+    **Output**: Predicted final positions for 2025-26 season
+    """
+    try:
+        # Current 2024-25 standings (Dec 10, 2025 - 15 matches played)
+        current_standings = [
+            {"team": "Arsenal", "wins": 10, "draws": 3, "losses": 2, "goals_scored": 28, "goals_conceded": 9, "clean_sheets": 5},
+            {"team": "Man City", "wins": 10, "draws": 1, "losses": 4, "goals_scored": 35, "goals_conceded": 16, "clean_sheets": 3},
+            {"team": "Aston Villa", "wins": 9, "draws": 3, "losses": 3, "goals_scored": 22, "goals_conceded": 15, "clean_sheets": 4},
+            {"team": "Crystal Palace", "wins": 7, "draws": 5, "losses": 3, "goals_scored": 20, "goals_conceded": 12, "clean_sheets": 3},
+            {"team": "Chelsea", "wins": 7, "draws": 4, "losses": 4, "goals_scored": 25, "goals_conceded": 15, "clean_sheets": 2},
+            {"team": "Man United", "wins": 7, "draws": 4, "losses": 4, "goals_scored": 26, "goals_conceded": 22, "clean_sheets": 2},
+            {"team": "Everton", "wins": 7, "draws": 3, "losses": 5, "goals_scored": 18, "goals_conceded": 17, "clean_sheets": 2},
+            {"team": "Brighton", "wins": 6, "draws": 5, "losses": 4, "goals_scored": 25, "goals_conceded": 21, "clean_sheets": 2},
+            {"team": "Sunderland", "wins": 6, "draws": 5, "losses": 4, "goals_scored": 18, "goals_conceded": 17, "clean_sheets": 2},
+            {"team": "Liverpool", "wins": 7, "draws": 2, "losses": 6, "goals_scored": 24, "goals_conceded": 24, "clean_sheets": 2},
+            {"team": "Tottenham", "wins": 6, "draws": 4, "losses": 5, "goals_scored": 25, "goals_conceded": 18, "clean_sheets": 2},
+            {"team": "Newcastle", "wins": 6, "draws": 4, "losses": 5, "goals_scored": 21, "goals_conceded": 19, "clean_sheets": 2},
+            {"team": "Bournemouth", "wins": 5, "draws": 5, "losses": 5, "goals_scored": 21, "goals_conceded": 24, "clean_sheets": 1},
+            {"team": "Brentford", "wins": 6, "draws": 1, "losses": 8, "goals_scored": 21, "goals_conceded": 24, "clean_sheets": 1},
+            {"team": "Fulham", "wins": 5, "draws": 2, "losses": 8, "goals_scored": 20, "goals_conceded": 24, "clean_sheets": 1},
+            {"team": "Leeds United", "wins": 4, "draws": 3, "losses": 8, "goals_scored": 19, "goals_conceded": 29, "clean_sheets": 1},
+            {"team": "Nottm Forest", "wins": 4, "draws": 3, "losses": 8, "goals_scored": 14, "goals_conceded": 25, "clean_sheets": 1},
+            {"team": "West Ham", "wins": 3, "draws": 4, "losses": 8, "goals_scored": 17, "goals_conceded": 29, "clean_sheets": 1},
+            {"team": "Burnley", "wins": 3, "draws": 1, "losses": 11, "goals_scored": 16, "goals_conceded": 30, "clean_sheets": 0},
+            {"team": "Wolves", "wins": 0, "draws": 2, "losses": 13, "goals_scored": 8, "goals_conceded": 33, "clean_sheets": 0},
+        ]
+        
+        # Load model
+        model_data = load_bo1()
+        model = model_data['model']
+        scaler = model_data.get('scaler')
+        feature_names = model_data['features']
+        metadata = model_data.get('metadata', {})
+        
+        # Prepare features and predict for each team
+        predictions_list = []
+        
+        for team_stat in current_standings:
+            # Engineer features from current season stats
+            features = prepare_season_ranking_features(team_stat)
+            
+            # Get feature names from scaler if available
+            if scaler and hasattr(scaler, 'feature_names_in_'):
+                actual_features = scaler.feature_names_in_.tolist()
+            else:
+                actual_features = feature_names
+            
+            # Add any missing features
+            for feat in actual_features:
+                if feat not in features:
+                    if feat == 'Clean_Sheets':
+                        features[feat] = team_stat.get('clean_sheets', 0)
+            
+            # Create DataFrame with correct feature order
+            X = pd.DataFrame([features])[actual_features]
+            
+            # Scale if scaler exists
+            if scaler:
+                X_scaled = scaler.transform(X)
+            else:
+                X_scaled = X.values
+            
+            # Predict position
+            predicted_position = model.predict(X_scaled)[0]
+            predicted_position = np.clip(predicted_position, 1, 20)
+            
+            predictions_list.append({
+                'team': team_stat['team'],
+                'predicted_position': float(predicted_position)
+            })
+        
+        # Sort by predicted position and assign ranks
+        predictions_list.sort(key=lambda x: x['predicted_position'])
+        
+        ranked_predictions = []
+        for rank, pred in enumerate(predictions_list, start=1):
+            mae = metadata.get('mae', 1.15)
+            confidence = assign_confidence_level(mae, pred['predicted_position'])
+            
+            ranked_predictions.append({
+                "rank": rank,
+                "team": pred['team'],
+                "predicted_position": rank,
+                "raw_prediction": round(pred['predicted_position'], 2),
+                "confidence": confidence
+            })
+        
+        return {
+            "season": "2025-26",
+            "based_on_season": "2024-25 (15 matches)",
+            "predictions": ranked_predictions,
+            "model_metadata": {
+                "algorithm": metadata.get('algorithm', 'KNN Regressor'),
+                "mae": metadata.get('mae'),
+                "r2_score": metadata.get('r2_score'),
+                "note": "Forecast based on current 2024-25 season standings (December 10, 2025)"
+            }
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Forecast failed: {str(e)}"
+        )
+
 @router.get("/predict-season/{season}")
 async def predict_season_from_data(
     season: str,

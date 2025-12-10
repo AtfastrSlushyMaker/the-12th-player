@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getAvailableSeasons, predictSeasonFromData, getModelInfo, type SeasonRankingResponse, type ModelInfo } from '@/lib/api';
+import { getAvailableSeasons, predictSeasonFromData, getModelInfo, getForecast202526, type SeasonRankingResponse, type ModelInfo } from '@/lib/api';
 import { useAppStore } from '@/store/appStore';
-import { RefreshCcw, TrendingUp, Trophy, Target, CheckCircle } from 'lucide-react';
+import { RefreshCcw, TrendingUp, Trophy, Target, CheckCircle, Sparkles } from 'lucide-react';
 import ExpertPanel from '@/components/ExpertPanel';
 import { getTeamLogo } from '@/lib/teamLogos';
 
@@ -13,6 +13,7 @@ export default function SeasonRankings() {
   const [loading, setLoading] = useState(false);
   const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
   const [data, setData] = useState<SeasonRankingResponse | null>(null);
+  const [forecast, setForecast] = useState<SeasonRankingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Load available seasons on mount
@@ -23,6 +24,11 @@ export default function SeasonRankings() {
         setSelectedSeason(res.default);
       })
       .catch(() => setError('Failed to load available seasons'));
+    
+    // Load 2025-26 forecast on mount
+    getForecast202526()
+      .then(res => setForecast(res))
+      .catch(() => {}) // Silently fail if not available
   }, []);
 
   useEffect(() => {
@@ -58,6 +64,79 @@ export default function SeasonRankings() {
           Predict final league standings using KNN regression on real historical data
         </p>
       </div>
+
+      {/* 2025-26 Forecast Section */}
+      {forecast && (
+        <div className="mb-12 animate-fade-in">
+          <div className="glass-card p-8 border border-blue-500/20 bg-gradient-to-br from-blue-50/50 to-white">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-500/20">
+                <Sparkles className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold stat-green">2025-26 Season Forecast</h2>
+                <p className="text-sm text-muted-green">{(forecast as any).based_on_season}</p>
+              </div>
+            </div>
+
+            {/* Forecast Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#0b6623]/20">
+                    <th className="text-left p-4 text-muted-green font-semibold">Rank</th>
+                    <th className="text-left p-4 text-muted-green font-semibold">Team</th>
+                    <th className="text-right p-4 text-muted-green font-semibold">Prediction</th>
+                    {expertMode && <th className="text-right p-4 text-muted-green font-semibold">Confidence</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {forecast.predictions.map(row => {
+                    const zoneConfigs = {
+                      champions: { color: 'border-blue-400 bg-blue-50', dot: 'bg-blue-500', label: 'Champions League' },
+                      europa: { color: 'border-orange-400 bg-orange-50', dot: 'bg-orange-500', label: 'Europa League' },
+                      conference: { color: 'border-emerald-400 bg-emerald-50', dot: 'bg-emerald-500', label: 'Conference League' },
+                      relegation: { color: 'border-red-400 bg-red-50', dot: 'bg-red-500', label: 'Relegation' },
+                    };
+                    
+                    let zone;
+                    if (row.rank <= 4) zone = zoneConfigs.champions;
+                    else if (row.rank === 5) zone = zoneConfigs.europa;
+                    else if (row.rank === 6) zone = zoneConfigs.conference;
+                    else if (row.rank >= 18) zone = zoneConfigs.relegation;
+                    else zone = { color: 'border-gray-400 bg-gray-50', dot: 'bg-gray-500', label: 'Mid Table' };
+                    
+                    return (
+                      <tr key={row.team} className="border-b border-[#0b6623]/10 hover:bg-[#0b6623]/5 transition-colors">
+                        <td className="p-4">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#0b6623] text-white font-bold text-xs">
+                            {row.rank}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <img src={getTeamLogo(row.team)} alt={row.team} className="w-6 h-6 object-contain" />
+                            <span className="font-semibold stat-green">{row.team}</span>
+                          </div>
+                        </td>
+                        <td className="p-4 text-right">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold border" style={{borderColor: zoneConfigs.champions.color.split(' ')[1], background: zoneConfigs.champions.color.split(' ')[2]}}>
+                            <span className={`w-2 h-2 rounded-full`} style={{background: zone.dot.replace('bg-', '')}}></span>
+                            {zone.label}
+                          </span>
+                        </td>
+                        {expertMode && (
+                          <td className="p-4 text-right text-muted-green text-xs font-medium">{row.confidence}</td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Season Selector */}
       <div className="glass-card p-8 mb-8 animate-slide-up">
@@ -202,7 +281,7 @@ export default function SeasonRankings() {
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <img src={getTeamLogo(row.team)} alt={row.team} className="w-6 h-6 object-contain" />
-                        {row.rank <= 3 && <Trophy className={`w-4 h-4 ${row.rank === 1 ? 'text-yellow-500' : row.rank === 2 ? 'text-gray-400' : 'text-amber-600'}`} />}
+                        {row.rank <= 3 && <Trophy className={`w-4 h-4 ${row.rank === 1 ? 'text-yellow-500' : row.rank === 2 ? 'text-gray-600' : 'text-amber-600'}`} />}
                         <span className="font-semibold">{row.team}</span>
                       </div>
                     </td>
