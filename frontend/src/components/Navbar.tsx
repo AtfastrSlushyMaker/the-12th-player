@@ -45,8 +45,8 @@ export default function Navbar() {
                                     key={item.path}
                                     to={item.path}
                                     className={`relative px-5 py-2.5 rounded-xl flex items-center gap-2 font-semibold transition-all duration-300 ${isActive
-                                            ? 'text-[#0d1b0d] bg-[#e9f9ec] shadow-inner'
-                                            : 'text-muted-green hover:text-[#0d1b0d] hover:bg-[#e9f9ec]'
+                                        ? 'text-[#0d1b0d] bg-[#e9f9ec] shadow-inner'
+                                        : 'text-muted-green hover:text-[#0d1b0d] hover:bg-[#e9f9ec]'
                                         }`}
                                 >
                                     {isActive && (
@@ -64,8 +64,8 @@ export default function Navbar() {
                         <button
                             onClick={toggleExpertMode}
                             className={`hidden md:flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${expertMode
-                                    ? 'pl-gradient-primary text-white shadow-lg shadow-[#0b6623]/30'
-                                    : 'bg-[#e9f9ec] text-muted-green hover:bg-white border border-[#0b6623]/15'
+                                ? 'pl-gradient-primary text-white shadow-lg shadow-[#0b6623]/30'
+                                : 'bg-[#e9f9ec] text-muted-green hover:bg-white border border-[#0b6623]/15'
                                 }`}
                         >
                             {expertMode ? (
@@ -102,8 +102,8 @@ export default function Navbar() {
                                     to={item.path}
                                     onClick={() => setMobileMenuOpen(false)}
                                     className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${isActive
-                                            ? 'pl-gradient-primary text-white'
-                                            : 'text-muted-green hover:bg-[#e9f9ec] hover:text-[#0d1b0d]'
+                                        ? 'pl-gradient-primary text-white'
+                                        : 'text-muted-green hover:bg-[#e9f9ec] hover:text-[#0d1b0d]'
                                         }`}
                                 >
                                     <Icon className="w-5 h-5" />
@@ -118,8 +118,8 @@ export default function Navbar() {
                                 setMobileMenuOpen(false);
                             }}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${expertMode
-                                    ? 'pl-gradient-primary text-white'
-                                    : 'text-muted-green hover:bg-[#e9f9ec] hover:text-[#0d1b0d] border border-[#0b6623]/15'
+                                ? 'pl-gradient-primary text-white'
+                                : 'text-muted-green hover:bg-[#e9f9ec] hover:text-[#0d1b0d] border border-[#0b6623]/15'
                                 }`}
                         >
                             {expertMode ? (
