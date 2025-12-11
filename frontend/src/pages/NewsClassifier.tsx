@@ -38,23 +38,23 @@ const TIER_ICONS = {
 
 const EXAMPLE_ARTICLES = [
     {
-        title: 'Liverpool Football Club announces the signing of midfielder Alexis Mac Allister',
-        text: 'Liverpool Football Club announces the signing of midfielder Alexis Mac Allister from Brighton & Hove Albion. The 24-year-old Argentine international has signed a long-term contract. Mac Allister made 37 appearances for Brighton last season.',
+        title: 'Is there any way back for Salah and Liverpool?',
+        text: 'After Mohamed Salah\'s explosive interview about his Liverpool future, BBC Sport takes a closer look at if there is a way back for him.',
         expectedTier: 1
     },
     {
-        title: 'Arsenal set to make €60 million bid for Florian Wirtz',
-        text: 'Arsenal are set to make a €60 million bid for Florian Wirtz from Bayer Leverkusen. According to multiple sources close to the club, Arteta has identified the 22-year-old as his primary midfield target for the summer window. Negotiations are expected to begin next week.',
+        title: 'Manchester United leading race for Kane - multiple sources',
+        text: 'Manchester United have moved to the front of the queue to sign Harry Kane from Bayern Munich. Sources have told us the Red Devils are in advanced negotiations with the striker, with personal terms close to agreement.',
         expectedTier: 2
     },
     {
-        title: 'BOMBSHELL! Manchester United in SHOCK transfer bid!',
-        text: 'BOMBSHELL! Manchester United in SHOCK transfer bid! Sources close to Old Trafford claim the Red Devils are about to break the world transfer record for a STUNNING new signing that will CHANGE EVERYTHING!',
+        title: 'SHOCK! Chelsea in STUNNING £100m mega-deal!',
+        text: 'EXCLUSIVE! Chelsea are set to pull off the signing of the summer! The Blues are in talks for a MASSIVE new superstar that will REVOLUTIONIZE the Premier League! Full exclusive story inside - this is HUGE!',
         expectedTier: 3
     },
     {
-        title: 'My cousin works at Liverpool - insider info!',
-        text: 'Okay so my mate\'s cousin works at Liverpool\'s training ground and he says they\'re signing 5 new players next week and one of them is a "world-class" striker from Italy. Can\'t say who but it\'s HUGE. This is 100% happening trust me.',
+        title: 'Just heard from someone I know',
+        text: 'Omg I just spoke to someone who knows someone at Arsenal and they said they are signing 3 new players this week!! Trust me bro this is happening!!! This is 100% legit inside information!!',
         expectedTier: 4
     }
 ];

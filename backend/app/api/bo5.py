@@ -68,15 +68,15 @@ async def classify_news_credibility(
         # Vectorize the text
         X = vectorizer.transform([combined_text])
         
-        # Predict tier (1-4, not 0-3)
+        # Predict tier - model.classes_ is [1, 2, 3, 4] (1-indexed)
         prediction = model.predict(X)[0]
         probabilities_array = model.predict_proba(X)[0]
         
-        # Convert from 0-indexed to 1-indexed tier
-        predicted_tier = int(prediction) + 1
+        # prediction is already 1-indexed (1, 2, 3, or 4)
+        predicted_tier = int(prediction)
         
-        # Get the confidence for the PREDICTED tier (not just max across all)
-        confidence = float(probabilities_array[int(prediction)])
+        # But probabilities_array is 0-indexed, so use (prediction - 1) to access it
+        confidence = float(probabilities_array[int(prediction) - 1])
         
         # Create probability mapping (0-3 index to tier 1-4)
         tier_probs = {
