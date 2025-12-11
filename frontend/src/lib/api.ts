@@ -151,6 +151,39 @@ export const compareMatchPrediction = async (
     return response.data;
 };
 
+// Head-to-head match history
+export interface HeadToHeadMatch {
+    date: string;
+    home_team: string;
+    away_team: string;
+    home_score: number | null;
+    away_score: number | null;
+    result: string | null;
+    season: string;
+}
+
+export interface HeadToHeadResponse {
+    home_team: string;
+    away_team: string;
+    matches: HeadToHeadMatch[];
+    stats: {
+        total_matches: number;
+        home_wins: number;
+        away_wins: number;
+        draws: number;
+    };
+}
+
+export const getHeadToHeadHistory = async (homeTeam: string, awayTeam: string): Promise<HeadToHeadResponse> => {
+    const response = await api.get('/api/v1/head-to-head', {
+        params: {
+            home_team: homeTeam,
+            away_team: awayTeam
+        }
+    });
+    return response.data;
+};
+
 // BO3: Team Style
 export interface TeamStyleResponse {
     team: string;

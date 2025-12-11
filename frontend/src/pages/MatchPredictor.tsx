@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Zap, TrendingUp, Award, Shield, Swords, CheckCircle, XCircle, Clock, Calendar } from 'lucide-react';
-import { predictMatch, compareMatchPrediction, type MatchPredictionRequest, type MatchPredictionResponse, type MatchComparisonResponse } from '@/lib/api';
+import { predictMatch, compareMatchPrediction, getHeadToHeadHistory, type MatchPredictionRequest, type MatchPredictionResponse, type MatchComparisonResponse, type HeadToHeadResponse } from '@/lib/api';
 import { useAppStore } from '@/store/appStore';
 import Loading from '@/components/Loading';
 import ErrorMessage from '@/components/ErrorMessage';
@@ -17,6 +17,8 @@ export default function MatchPredictor() {
     const [showComparison, setShowComparison] = useState(false);
     const [comparison, setComparison] = useState<MatchComparisonResponse | null>(null);
     const [loadingComparison, setLoadingComparison] = useState(false);
+    const [h2hHistory, setH2hHistory] = useState<HeadToHeadResponse | null>(null);
+    const [loadingH2h, setLoadingH2h] = useState(false);
 
     const teams = [
         'Arsenal', 'Aston Villa', 'Bournemouth', 'Brentford', 'Brighton',
@@ -74,10 +76,25 @@ export default function MatchPredictor() {
                 result.confidence
             );
             setComparison(comparisonData);
+            
+            // Also fetch H2H history
+            fetchH2hHistory(homeTeam, awayTeam);
         } catch (err) {
             console.error('Failed to fetch match result:', err);
         } finally {
             setLoadingComparison(false);
+        }
+    };
+
+    const fetchH2hHistory = async (home: string, away: string) => {
+        setLoadingH2h(true);
+        try {
+            const data = await getHeadToHeadHistory(home, away);
+            setH2hHistory(data);
+        } catch (err) {
+            console.error('Failed to fetch H2H history:', err);
+        } finally {
+            setLoadingH2h(false);
         }
     };
 
@@ -388,6 +405,60 @@ export default function MatchPredictor() {
                                             <p className="text-sm text-blue-700 font-medium">
                                                 This match hasn't been played yet. The prediction will remain as a forecast.
                                             </p>
+                                        </div>
+                                    )}
+
+                                    {/* Head-to-Head History */}
+                                    {loadingH2h && (
+                                        <div className="p-4 text-center">
+                                            <div className="w-6 h-6 border-2 border-[#0b6623]/30 border-t-[#0b6623] rounded-full animate-spin mx-auto"></div>
+                                        </div>
+                                    )}
+
+                                    {h2hHistory && h2hHistory.matches.length > 0 && (
+                                        <div className="space-y-4">
+                                            <h4 className="text-lg font-bold stat-green flex items-center gap-2">
+                                                <Shield className="w-5 h-5" />
+                                                Head-to-Head History
+                                            </h4>
+                                            <div className="grid grid-cols-3 gap-4 mb-4">
+                                                <div className="glass-card p-4 text-center">
+                                                    <div className="text-2xl font-bold stat-green">{h2hHistory.stats.home_wins}</div>
+                                                    <div className="text-xs text-muted-green uppercase">{homeTeam} Wins</div>
+                                                </div>
+                                                <div className="glass-card p-4 text-center">
+                                                    <div className="text-2xl font-bold stat-gold">{h2hHistory.stats.draws}</div>
+                                                    <div className="text-xs text-muted-green uppercase">Draws</div>
+                                                </div>
+                                                <div className="glass-card p-4 text-center">
+                                                    <div className="text-2xl font-bold stat-green">{h2hHistory.stats.away_wins}</div>
+                                                    <div className="text-xs text-muted-green uppercase">{awayTeam} Wins</div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                                                {h2hHistory.matches.slice(0, 10).map((match, idx) => (
+                                                    <div key={idx} className="p-3 rounded-xl bg-[#e9f9ec] border border-[#0b6623]/10 flex items-center justify-between">
+                                                        <div className="flex items-center gap-2 flex-1">
+                                                            <span className="text-xs text-muted-green font-semibold">{match.season}</span>
+                                                            <span className="text-xs text-muted-green">
+                                                                {match.date ? new Date(match.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm font-semibold">{match.home_score ?? '-'}</span>
+                                                            <span className="text-muted-green">-</span>
+                                                            <span className="text-sm font-semibold">{match.away_score ?? '-'}</span>
+                                                            <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+                                                                match.result === 'Home Win' ? 'bg-green-100 text-green-700' :
+                                                                match.result === 'Draw' ? 'bg-yellow-100 text-yellow-700' :
+                                                                'bg-red-100 text-red-700'
+                                                            }`}>
+                                                                {match.result || 'TBD'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>

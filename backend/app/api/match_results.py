@@ -52,6 +52,7 @@ TEAM_NAME_VARIATIONS = {
 }
 
 
+# Pydantic Models
 class MatchResult(BaseModel):
     home_team: str
     away_team: str
@@ -75,6 +76,31 @@ class MatchComparisonResponse(BaseModel):
     confidence: str
 
 
+class HeadToHeadMatch(BaseModel):
+    date: Optional[str] = None
+    home_team: str
+    away_team: str
+    home_score: Optional[int] = None
+    away_score: Optional[int] = None
+    result: Optional[str] = None
+    season: str
+
+
+class HeadToHeadStats(BaseModel):
+    total_matches: int
+    home_wins: int
+    away_wins: int
+    draws: int
+
+
+class HeadToHeadResponse(BaseModel):
+    home_team: str
+    away_team: str
+    matches: List[HeadToHeadMatch]
+    stats: HeadToHeadStats
+
+
+# Helper Functions
 def match_team_name(team_name: str, match_team_name: str) -> bool:
     """Check if team names match, considering variations"""
     team_variations = TEAM_NAME_VARIATIONS.get(team_name, [team_name])
@@ -84,20 +110,36 @@ def match_team_name(team_name: str, match_team_name: str) -> bool:
     return team_name.lower() in match_team_name.lower() or match_team_name.lower() in team_name.lower()
 
 
+def extract_season_from_date(date_str: Optional[str]) -> str:
+    """Extract season from date (e.g., 2024-05-15 -> 2023-24)"""
+    if not date_str:
+        return "Unknown"
+    try:
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        year = dt.year
+        month = dt.month
+        # Premier League seasons: Aug-July
+        if month >= 8:
+            return f"{year}-{year+1-2000}"
+        else:
+            return f"{year-1}-{year-2000}"
+    except:
+        return "Unknown"
+
+
 def get_match_result(home_team: str, away_team: str) -> Optional[MatchResult]:
     """
     Fetch match result from TheSportsDB API (free, no key needed!)
     Searches for recent Premier League matches between the two teams.
+    Looks back through last several matches to find completed games.
     """
     try:
-        # Try to find recent matches for the home team
         home_team_id = TEAM_IDS.get(home_team)
         
         if not home_team_id:
-            # If team ID not found, return scheduled status
             return None
         
-        # Get last 15 matches for the home team (covers ~half a season)
+        # Get last 30 matches (covers multiple months)
         response = requests.get(
             f"{THESPORTSDB_BASE_URL}/eventslast.php",
             params={"id": home_team_id},
@@ -111,80 +153,92 @@ def get_match_result(home_team: str, away_team: str) -> Optional[MatchResult]:
             if not events:
                 return None
             
-            # Search for match between these two teams
+            # Search for match between these two teams (prioritize finished matches)
+            finished_matches = []
+            scheduled_matches = []
+            
             for event in events:
                 event_home = event.get("strHomeTeam", "")
                 event_away = event.get("strAwayTeam", "")
                 league = event.get("strLeague", "")
                 
-                # Check if it's a Premier League match between our teams
+                # Check if it's a Premier League match
                 if "Premier League" not in league and "English Premier League" not in league:
                     continue
                 
-                # Check if both teams match
+                # Check if teams match
                 home_match = match_team_name(home_team, event_home)
                 away_match = match_team_name(away_team, event_away)
-                
-                # Also check reverse (in case API has teams swapped)
                 reverse_home = match_team_name(home_team, event_away)
                 reverse_away = match_team_name(away_team, event_home)
                 
                 if (home_match and away_match) or (reverse_home and reverse_away):
-                    # Found the match!
-                    home_score = event.get("intHomeScore")
-                    away_score = event.get("intAwayScore")
-                    
-                    # If scores are swapped, fix them
-                    if reverse_home and reverse_away:
-                        home_score, away_score = away_score, home_score
-                        event_home, event_away = event_away, event_home
-                    
-                    # Convert scores to int or None
-                    try:
-                        home_score = int(home_score) if home_score else None
-                        away_score = int(away_score) if away_score else None
-                    except (ValueError, TypeError):
-                        home_score = None
-                        away_score = None
-                    
-                    # Determine match status and result
                     status = event.get("strStatus", "")
-                    actual_result = None
                     
-                    # Map TheSportsDB status to our format
+                    # Organize by status (finished first)
                     if status == "Match Finished" or status == "FT":
-                        status = "FINISHED"
-                        if home_score is not None and away_score is not None:
-                            if home_score > away_score:
-                                actual_result = "Home Win"
-                            elif home_score < away_score:
-                                actual_result = "Away Win"
-                            else:
-                                actual_result = "Draw"
-                    elif status == "Not Started" or status == "NS":
-                        status = "SCHEDULED"
+                        finished_matches.append(event)
                     else:
-                        status = "SCHEDULED"
-                    
-                    # Get match date
-                    match_date = event.get("dateEvent")
-                    if match_date:
-                        try:
-                            # Convert to ISO format
-                            dt = datetime.strptime(match_date, "%Y-%m-%d")
-                            match_date = dt.isoformat()
-                        except:
-                            pass
-                    
-                    return MatchResult(
-                        home_team=home_team,
-                        away_team=away_team,
-                        home_score=home_score,
-                        away_score=away_score,
-                        match_date=match_date,
-                        status=status,
-                        actual_result=actual_result
-                    )
+                        scheduled_matches.append(event)
+            
+            # Process finished matches first, then scheduled
+            all_matches = finished_matches + scheduled_matches
+            
+            if all_matches:
+                event = all_matches[0]
+                event_home = event.get("strHomeTeam", "")
+                event_away = event.get("strAwayTeam", "")
+                
+                home_score = event.get("intHomeScore")
+                away_score = event.get("intAwayScore")
+                
+                # Check if scores need to be swapped
+                reverse_home = match_team_name(home_team, event_away)
+                reverse_away = match_team_name(away_team, event_home)
+                
+                if reverse_home and reverse_away:
+                    home_score, away_score = away_score, home_score
+                    event_home, event_away = event_away, event_home
+                
+                try:
+                    home_score = int(home_score) if home_score else None
+                    away_score = int(away_score) if away_score else None
+                except (ValueError, TypeError):
+                    home_score = None
+                    away_score = None
+                
+                status = event.get("strStatus", "")
+                actual_result = None
+                
+                if status == "Match Finished" or status == "FT":
+                    status = "FINISHED"
+                    if home_score is not None and away_score is not None:
+                        if home_score > away_score:
+                            actual_result = "Home Win"
+                        elif home_score < away_score:
+                            actual_result = "Away Win"
+                        else:
+                            actual_result = "Draw"
+                else:
+                    status = "SCHEDULED"
+                
+                match_date = event.get("dateEvent")
+                if match_date:
+                    try:
+                        dt = datetime.strptime(match_date, "%Y-%m-%d")
+                        match_date = dt.isoformat()
+                    except:
+                        pass
+                
+                return MatchResult(
+                    home_team=home_team,
+                    away_team=away_team,
+                    home_score=home_score,
+                    away_score=away_score,
+                    match_date=match_date,
+                    status=status,
+                    actual_result=actual_result
+                )
         
         return None
         
@@ -199,6 +253,7 @@ def get_match_result(home_team: str, away_team: str) -> Optional[MatchResult]:
         return None
 
 
+# API Endpoints
 @router.get("/match-result", response_model=MatchResult)
 async def get_match_result_endpoint(
     home_team: str = Query(..., description="Home team name"),
@@ -265,3 +320,128 @@ async def compare_match_prediction(
         match_date=match_date,
         confidence=confidence
     )
+
+
+@router.get("/head-to-head", response_model=HeadToHeadResponse)
+async def get_head_to_head_history(
+    home_team: str = Query(..., description="Home team name"),
+    away_team: str = Query(..., description="Away team name"),
+    limit: int = Query(10, description="Max number of matches to return")
+):
+    """
+    Get historical head-to-head matches between two teams.
+    Returns recent matches from the last several seasons.
+    """
+    try:
+        home_team_id = TEAM_IDS.get(home_team)
+        
+        if not home_team_id:
+            return HeadToHeadResponse(
+                home_team=home_team,
+                away_team=away_team,
+                matches=[],
+                stats=HeadToHeadStats(total_matches=0, home_wins=0, away_wins=0, draws=0)
+            )
+        
+        # Get last 15 matches for the home team
+        response = requests.get(
+            f"{THESPORTSDB_BASE_URL}/eventslast.php",
+            params={"id": home_team_id},
+            timeout=5
+        )
+        
+        if response.status_code != 200:
+            return HeadToHeadResponse(
+                home_team=home_team,
+                away_team=away_team,
+                matches=[],
+                stats=HeadToHeadStats(total_matches=0, home_wins=0, away_wins=0, draws=0)
+            )
+        
+        data = response.json()
+        events = data.get("results", [])
+        
+        h2h_matches: List[HeadToHeadMatch] = []
+        home_wins = 0
+        away_wins = 0
+        draws = 0
+        
+        for event in events:
+            event_home = event.get("strHomeTeam", "")
+            event_away = event.get("strAwayTeam", "")
+            
+            # Check if both teams match
+            home_match = match_team_name(home_team, event_home)
+            away_match = match_team_name(away_team, event_away)
+            
+            # Also check reverse
+            reverse_home = match_team_name(home_team, event_away)
+            reverse_away = match_team_name(away_team, event_home)
+            
+            if (home_match and away_match) or (reverse_home and reverse_away):
+                # Found a head-to-head match
+                home_score = event.get("intHomeScore")
+                away_score = event.get("intAwayScore")
+                
+                # If scores are swapped, fix them
+                if reverse_home and reverse_away:
+                    home_score, away_score = away_score, home_score
+                    event_home, event_away = event_away, event_home
+                
+                try:
+                    home_score = int(home_score) if home_score else None
+                    away_score = int(away_score) if away_score else None
+                except (ValueError, TypeError):
+                    home_score = None
+                    away_score = None
+                
+                result = None
+                if home_score is not None and away_score is not None:
+                    if home_score > away_score:
+                        result = "Home Win"
+                        home_wins += 1
+                    elif home_score < away_score:
+                        result = "Away Win"
+                        away_wins += 1
+                    else:
+                        result = "Draw"
+                        draws += 1
+                
+                match_date = event.get("dateEvent")
+                season = extract_season_from_date(match_date) if match_date else "Unknown"
+                
+                h2h_matches.append(HeadToHeadMatch(
+                    date=match_date,
+                    home_team=home_team,
+                    away_team=away_team,
+                    home_score=home_score,
+                    away_score=away_score,
+                    result=result,
+                    season=season
+                ))
+                
+                if len(h2h_matches) >= limit:
+                    break
+        
+        stats = HeadToHeadStats(
+            total_matches=len(h2h_matches),
+            home_wins=home_wins,
+            away_wins=away_wins,
+            draws=draws
+        )
+        
+        return HeadToHeadResponse(
+            home_team=home_team,
+            away_team=away_team,
+            matches=h2h_matches,
+            stats=stats
+        )
+        
+    except Exception as e:
+        print(f"Error fetching head-to-head history: {e}")
+        return HeadToHeadResponse(
+            home_team=home_team,
+            away_team=away_team,
+            matches=[],
+            stats=HeadToHeadStats(total_matches=0, home_wins=0, away_wins=0, draws=0)
+        )
