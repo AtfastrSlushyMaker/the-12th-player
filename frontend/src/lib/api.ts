@@ -269,12 +269,7 @@ export const getNextSeasonForecast = async () => {
 
 // Get all teams
 export const getTeams = async (): Promise<string[]> => {
-    // Mock data - in production, this would come from the API
-    return [
-        'Arsenal', 'Aston Villa', 'Bournemouth', 'Brentford', 'Brighton',
-        'Burnley', 'Chelsea', 'Crystal Palace', 'Everton', 'Fulham',
-        'Leeds United', 'Liverpool', 'Man City', 'Man United', 'Newcastle',
-        'Nottingham Forest', 'Sunderland', 'Tottenham', 'West Ham', 'Wolves'
-    ];
+    const response = await api.get('/api/v1/teams');
+    return response.data.teams;
 };
 

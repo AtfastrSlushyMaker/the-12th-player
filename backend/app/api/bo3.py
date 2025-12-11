@@ -8,13 +8,20 @@ import pandas as pd
 import numpy as np
 
 from app.schemas.responses import TeamStyleResponse, ClusterInfo
-from app.core.model_loader import load_bo3, load_teams
+from app.core.model_loader import load_bo3
 from app.core.preprocessing import get_cluster_label
 from pathlib import Path
 
 DATA_PATH = Path(__file__).parent.parent.parent / 'app' / 'data' / 'processed' / 'team_season_aggregated.csv'
 
 router = APIRouter()
+
+def _get_all_teams_from_data() -> List[str]:
+    """Get all teams available in the dataset (historical + current)."""
+    if not DATA_PATH.exists():
+        return []
+    df = pd.read_csv(DATA_PATH)
+    return sorted(df['Team'].unique().tolist())
 
 def _load_team_row(team: str, season: str) -> Dict[str, Any]:
     """Load aggregated season stats for a team from CSV, fallback to latest season if not found."""
@@ -134,7 +141,7 @@ async def get_team_tactical_style(
     try:
         # Load model and teams
         model_data = load_bo3()
-        valid_teams = load_teams()
+        valid_teams = _get_all_teams_from_data()
         
         model = model_data['model']
         scaler = model_data.get('scaler')
@@ -144,7 +151,7 @@ async def get_team_tactical_style(
         if team_name not in valid_teams:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid team name: '{team_name}'. Must be one of: {', '.join(valid_teams)}"
+                detail=f"Invalid team name: '{team_name}'. Available teams: {len(valid_teams)} teams with historical data"
             )
         
         # Prepare features
@@ -212,7 +219,7 @@ async def get_team_tactical_style(
 async def get_all_team_styles(season: str = Query("2024-25")):
     """Get tactical styles for all Premier League teams"""
     try:
-        valid_teams = load_teams()
+        valid_teams = _get_all_teams_from_data()
         
         all_styles = []
         for team in valid_teams:
@@ -285,7 +292,7 @@ async def get_team_style_history(team_name: str):
     """
     try:
         model_data = load_bo3()
-        valid_teams = load_teams()
+        valid_teams = _get_all_teams_from_data()
         
         model = model_data['model']
         scaler = model_data.get('scaler')
@@ -360,3 +367,22 @@ async def get_team_style_history(team_name: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get team style history: {str(e)}"
         )
+
+@router.get("/teams")
+async def get_available_teams():
+    """
+    Get list of all teams with historical data in the dataset.
+    Returns all 46 teams that have Premier League data.
+    """
+    try:
+        teams = _get_all_teams_from_data()
+        return {
+            "teams": teams,
+            "total": len(teams)
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to load teams: {str(e)}"
+        )
+
