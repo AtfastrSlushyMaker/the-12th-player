@@ -4,7 +4,7 @@ FastAPI application serving 4 ML models for PL predictions
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import bo1, bo2, bo3, bo4, bo5
+from app.api import bo1, bo2, bo3, bo4, bo5, match_results
 
 app = FastAPI(
     title="Premier League Predictions API",
@@ -31,6 +31,7 @@ app.include_router(bo2.router, prefix="/api/v1", tags=["Match Predictions"])
 app.include_router(bo3.router, prefix="/api/v1", tags=["Team Styles"])
 app.include_router(bo4.router, prefix="/api/v1", tags=["Player Recommendations"])
 app.include_router(bo5.router, prefix="/api/v1", tags=["News Credibility"])
+app.include_router(match_results.router, prefix="/api/v1", tags=["Match Results"])
 
 @app.get("/")
 async def root():

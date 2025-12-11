@@ -103,6 +103,54 @@ export const predictMatch = async (data: MatchPredictionRequest): Promise<MatchP
     return response.data;
 };
 
+// Match Results & Comparison
+export interface MatchResultResponse {
+    home_team: string;
+    away_team: string;
+    home_score: number | null;
+    away_score: number | null;
+    match_date: string | null;
+    status: string;
+    actual_result: string | null;
+}
+
+export interface MatchComparisonResponse {
+    home_team: string;
+    away_team: string;
+    predicted_result: string;
+    actual_result: string | null;
+    match_status: string;
+    is_correct: boolean | null;
+    home_score: number | null;
+    away_score: number | null;
+    match_date: string | null;
+    confidence: string;
+}
+
+export const getMatchResult = async (homeTeam: string, awayTeam: string): Promise<MatchResultResponse> => {
+    const response = await api.get('/api/v1/match-result', {
+        params: { home_team: homeTeam, away_team: awayTeam }
+    });
+    return response.data;
+};
+
+export const compareMatchPrediction = async (
+    homeTeam: string,
+    awayTeam: string,
+    predictedResult: string,
+    confidence: string
+): Promise<MatchComparisonResponse> => {
+    const response = await api.get('/api/v1/match-comparison', {
+        params: {
+            home_team: homeTeam,
+            away_team: awayTeam,
+            predicted_result: predictedResult,
+            confidence: confidence
+        }
+    });
+    return response.data;
+};
+
 // BO3: Team Style
 export interface TeamStyleResponse {
     team: string;

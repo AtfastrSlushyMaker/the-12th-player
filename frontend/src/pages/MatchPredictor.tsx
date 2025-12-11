@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Zap, TrendingUp, Award, Shield, Swords } from 'lucide-react';
-import { predictMatch, type MatchPredictionRequest, type MatchPredictionResponse } from '@/lib/api';
+import { Zap, TrendingUp, Award, Shield, Swords, CheckCircle, XCircle, Clock, Calendar } from 'lucide-react';
+import { predictMatch, compareMatchPrediction, type MatchPredictionRequest, type MatchPredictionResponse, type MatchComparisonResponse } from '@/lib/api';
 import { useAppStore } from '@/store/appStore';
 import Loading from '@/components/Loading';
 import ErrorMessage from '@/components/ErrorMessage';
@@ -15,6 +15,8 @@ export default function MatchPredictor() {
     const [result, setResult] = useState<MatchPredictionResponse | null>(null);
     const [matchHistory, setMatchHistory] = useState<MatchPredictionResponse[]>([]);
     const [showComparison, setShowComparison] = useState(false);
+    const [comparison, setComparison] = useState<MatchComparisonResponse | null>(null);
+    const [loadingComparison, setLoadingComparison] = useState(false);
 
     const teams = [
         'Arsenal', 'Aston Villa', 'Bournemouth', 'Brentford', 'Brighton',
@@ -57,6 +59,25 @@ export default function MatchPredictor() {
             setError(err.response?.data?.detail || 'Failed to predict match outcome');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const checkRealResult = async () => {
+        if (!result || !homeTeam || !awayTeam) return;
+
+        setLoadingComparison(true);
+        try {
+            const comparisonData = await compareMatchPrediction(
+                homeTeam,
+                awayTeam,
+                result.prediction,
+                result.confidence
+            );
+            setComparison(comparisonData);
+        } catch (err) {
+            console.error('Failed to fetch match result:', err);
+        } finally {
+            setLoadingComparison(false);
         }
     };
 
@@ -255,6 +276,128 @@ export default function MatchPredictor() {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Match Result Comparison */}
+                        <div className="glass-card p-6 mt-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold stat-green flex items-center gap-2">
+                                    <Calendar className="w-5 h-5" />
+                                    Check Real Result (2025-26 Season)
+                                </h3>
+                                <button
+                                    onClick={checkRealResult}
+                                    disabled={loadingComparison}
+                                    className="px-4 py-2 rounded-xl bg-[#e9f9ec] hover:bg-white border border-[#0b6623]/20 text-sm font-medium stat-green transition-colors disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {loadingComparison ? (
+                                        <><div className="w-4 h-4 border-2 border-[#0b6623]/30 border-t-[#0b6623] rounded-full animate-spin"></div>Checking...</>
+                                    ) : (
+                                        <><TrendingUp className="w-4 h-4" />Check Result</>
+                                    )}
+                                </button>
+                            </div>
+
+                            {comparison && (
+                                <div className="space-y-4">
+                                    {/* Match Status */}
+                                    <div className="flex items-center gap-3 p-4 rounded-xl bg-[#e9f9ec] border border-[#0b6623]/10">
+                                        {comparison.match_status === 'FINISHED' ? (
+                                            <>
+                                                <div className="flex items-center gap-2 flex-1">
+                                                    <span className="text-sm text-muted-green">Status:</span>
+                                                    <span className="px-3 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-bold">FINISHED</span>
+                                                </div>
+                                                {comparison.match_date && (
+                                                    <span className="text-xs text-muted-green">
+                                                        {new Date(comparison.match_date).toLocaleDateString('en-US', {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            year: 'numeric'
+                                                        })}
+                                                    </span>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Clock className="w-5 h-5 text-blue-600" />
+                                                <div className="flex items-center gap-2 flex-1">
+                                                    <span className="text-sm text-muted-green">Status:</span>
+                                                    <span className="px-3 py-1 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold">{comparison.match_status}</span>
+                                                </div>
+                                                <span className="text-xs text-muted-green">Match not played yet</span>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Score & Result Comparison */}
+                                    {comparison.match_status === 'FINISHED' && comparison.actual_result && (
+                                        <>
+                                            {/* Score Display */}
+                                            <div className="p-6 rounded-xl bg-gradient-to-br from-[#e9f9ec] to-white border border-[#0b6623]/20">
+                                                <div className="flex items-center justify-center gap-8">
+                                                    <div className="text-center">
+                                                        <img src={getTeamLogo(homeTeam)} alt={homeTeam} className="w-12 h-12 mx-auto mb-2" />
+                                                        <div className="text-sm font-semibold text-muted-green mb-1">{homeTeam}</div>
+                                                        <div className="text-4xl font-black stat-green">{comparison.home_score}</div>
+                                                    </div>
+                                                    <div className="text-2xl font-bold text-muted-green">-</div>
+                                                    <div className="text-center">
+                                                        <img src={getTeamLogo(awayTeam)} alt={awayTeam} className="w-12 h-12 mx-auto mb-2" />
+                                                        <div className="text-sm font-semibold text-muted-green mb-1">{awayTeam}</div>
+                                                        <div className="text-4xl font-black stat-green">{comparison.away_score}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Prediction Accuracy */}
+                                            <div className={`p-6 rounded-xl border-2 ${comparison.is_correct
+                                                    ? 'bg-green-50 border-green-300'
+                                                    : 'bg-red-50 border-red-300'
+                                                }`}>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        {comparison.is_correct ? (
+                                                            <CheckCircle className="w-8 h-8 text-green-600" />
+                                                        ) : (
+                                                            <XCircle className="w-8 h-8 text-red-600" />
+                                                        )}
+                                                        <div>
+                                                            <div className="text-sm font-semibold text-muted-green">Prediction Result</div>
+                                                            <div className={`text-2xl font-bold ${comparison.is_correct ? 'text-green-700' : 'text-red-700'
+                                                                }`}>
+                                                                {comparison.is_correct ? 'Correct! ✓' : 'Incorrect ✗'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-xs text-muted-green mb-1">Predicted</div>
+                                                        <div className="text-sm font-bold stat-green">{comparison.predicted_result}</div>
+                                                        <div className="text-xs text-muted-green mt-2">Actual</div>
+                                                        <div className="text-sm font-bold stat-green">{comparison.actual_result}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Forecast Message */}
+                                    {comparison.match_status === 'SCHEDULED' && (
+                                        <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-center">
+                                            <Clock className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                                            <p className="text-sm text-blue-700 font-medium">
+                                                This match hasn't been played yet. The prediction will remain as a forecast.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {!comparison && (
+                                <p className="text-sm text-muted-green text-center py-4">
+                                    Click "Check Result" to see if this match has been played and compare with our prediction.
+                                </p>
+                            )}
                         </div>
 
                         {/* Probabilities Grid - Expert Mode Only */}
