@@ -59,6 +59,9 @@ def get_player_data_from_dataset(position: str, max_age: int, min_minutes: int) 
     top_leagues = ['Premier League', 'La Liga', 'Bundesliga', 'Serie A', 'Ligue 1']
     df = df[df['Comp'].str.contains('|'.join(top_leagues), na=False, case=False)]
     
+    # Filter out players with missing or N/A market values
+    df = df[df['Market_Value'].notna() & (df['Market_Value'] > 0)]
+    
     # Compute derived features needed by the model
     # Ensure 90s is numeric
     df['90s'] = pd.to_numeric(df['90s'], errors='coerce').fillna(0)
