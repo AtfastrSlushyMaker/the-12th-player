@@ -138,6 +138,10 @@ def get_player_data_from_dataset(position: str, max_age: int, min_minutes: int) 
     # Age as numeric
     df['Age'] = pd.to_numeric(df['Age'], errors='coerce').fillna(0)
     
+    # DEDUPLICATE: Keep only the best appearance per player (by minutes played)
+    # Some players appear in multiple leagues due to transfers
+    df = df.sort_values('Min', ascending=False).drop_duplicates(subset=['Player'], keep='first')
+    
     return df
 
 def prepare_player_features(df: pd.DataFrame, feature_names: list) -> pd.DataFrame:
