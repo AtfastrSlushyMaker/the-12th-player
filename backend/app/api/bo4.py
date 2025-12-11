@@ -223,8 +223,13 @@ async def get_player_recommendations(
         # Store raw predictions (don't normalize - use raw model output)
         players_df['predicted_score'] = predictions
         
-        # Rank by predicted score
-        top_players = players_df.nlargest(limit, 'predicted_score')
+        # Rank by predicted score (primary) and Market_Value (secondary tiebreaker)
+        # This ensures consistent ordering when scores are equal
+        players_df_sorted = players_df.sort_values(
+            by=['predicted_score', 'Market_Value'], 
+            ascending=[False, False]
+        )
+        top_players = players_df_sorted.head(limit)
         
         # Build recommendations from REAL player data
         recommendations = []
