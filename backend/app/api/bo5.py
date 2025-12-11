@@ -75,13 +75,14 @@ async def classify_news_credibility(
         # Convert from 0-indexed to 1-indexed tier
         predicted_tier = int(prediction) + 1
         
+        # Get the confidence for the PREDICTED tier (not just max across all)
+        confidence = float(probabilities_array[int(prediction)])
+        
         # Create probability mapping (0-3 index to tier 1-4)
         tier_probs = {
             f"tier_{i+1}": float(probabilities_array[i])
             for i in range(4)
         }
-        
-        confidence = max(probabilities_array)
         
         return NewsCredibilityResponse(
             title=title,

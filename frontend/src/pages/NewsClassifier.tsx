@@ -38,19 +38,24 @@ const TIER_ICONS = {
 
 const EXAMPLE_ARTICLES = [
     {
-        title: 'Official: Manchester United sign new striker',
-        text: 'Manchester United Football Club is delighted to announce the signing of forward Marcus Johnson from Liverpool FC on a five-year deal. The England international completed his medical at Carrington Training Centre this morning.',
+        title: 'Liverpool Football Club announces the signing of midfielder Alexis Mac Allister',
+        text: 'Liverpool Football Club announces the signing of midfielder Alexis Mac Allister from Brighton & Hove Albion. The 24-year-old Argentine international has signed a long-term contract. Mac Allister made 37 appearances for Brighton last season.',
         expectedTier: 1
     },
     {
-        title: 'Arsenal prepare bid for top midfielder',
-        text: 'Arsenal are reportedly preparing a £50m bid for Inter Milan midfielder according to sources close to the club. The Gunners have been tracking the player throughout the season and are ready to make their move.',
+        title: 'Arsenal set to make €60 million bid for Florian Wirtz',
+        text: 'Arsenal are set to make a €60 million bid for Florian Wirtz from Bayer Leverkusen. According to multiple sources close to the club, Arteta has identified the 22-year-old as his primary midfield target for the summer window. Negotiations are expected to begin next week.',
         expectedTier: 2
     },
     {
-        title: 'EXCLUSIVE: Chelsea star demands transfer',
-        text: 'A Chelsea star is demanding an immediate transfer away from Stamford Bridge after a bust-up with the manager, sources claim. The player is said to be furious about lack of playing time.',
+        title: 'BOMBSHELL! Manchester United in SHOCK transfer bid!',
+        text: 'BOMBSHELL! Manchester United in SHOCK transfer bid! Sources close to Old Trafford claim the Red Devils are about to break the world transfer record for a STUNNING new signing that will CHANGE EVERYTHING!',
         expectedTier: 3
+    },
+    {
+        title: 'My cousin works at Liverpool - insider info!',
+        text: 'Okay so my mate\'s cousin works at Liverpool\'s training ground and he says they\'re signing 5 new players next week and one of them is a "world-class" striker from Italy. Can\'t say who but it\'s HUGE. This is 100% happening trust me.',
+        expectedTier: 4
     }
 ];
 
@@ -119,7 +124,7 @@ export default function NewsClassifier() {
             {/* Example Articles */}
             <div className="glass-card p-6 mb-6 animate-slide-up">
                 <h3 className="text-sm font-bold text-muted-green uppercase tracking-wide mb-3">Try Example Articles</h3>
-                <div className="grid md:grid-cols-3 gap-3">
+                <div className="grid md:grid-cols-4 gap-3">
                     {EXAMPLE_ARTICLES.map((article, idx) => (
                         <button
                             key={idx}
@@ -133,6 +138,49 @@ export default function NewsClassifier() {
                             </div>
                         </button>
                     ))}
+                </div>
+            </div>
+
+            {/* Tier Reference Guide */}
+            <div className="glass-card p-6 mb-6 animate-slide-up">
+                <h3 className="text-sm font-bold text-muted-green uppercase tracking-wide mb-4">Tier Characteristics</h3>
+                <div className="grid md:grid-cols-4 gap-4">
+                    <div className={`p-4 rounded-xl border-2 ${TIER_COLORS[1].bg} ${TIER_COLORS[1].border}`}>
+                        <h4 className={`font-bold ${TIER_COLORS[1].text} mb-2`}>Tier 1: Official</h4>
+                        <ul className="text-xs text-muted-green space-y-1">
+                            <li>✓ Club announcements</li>
+                            <li>✓ Verified statements</li>
+                            <li>✓ No exclamation marks</li>
+                            <li>✓ Professional tone</li>
+                        </ul>
+                    </div>
+                    <div className={`p-4 rounded-xl border-2 ${TIER_COLORS[2].bg} ${TIER_COLORS[2].border}`}>
+                        <h4 className={`font-bold ${TIER_COLORS[2].text} mb-2`}>Tier 2: Reliable</h4>
+                        <ul className="text-xs text-muted-green space-y-1">
+                            <li>✓ Named journalists</li>
+                            <li>✓ Multiple sources</li>
+                            <li>✓ Details and analysis</li>
+                            <li>✓ Balanced reporting</li>
+                        </ul>
+                    </div>
+                    <div className={`p-4 rounded-xl border-2 ${TIER_COLORS[3].bg} ${TIER_COLORS[3].border}`}>
+                        <h4 className={`font-bold ${TIER_COLORS[3].text} mb-2`}>Tier 3: Tabloid</h4>
+                        <ul className="text-xs text-muted-green space-y-1">
+                            <li>✗ EXCESSIVE caps</li>
+                            <li>✗ SHOCK, BOMBSHELL!!!</li>
+                            <li>✗ Sensational language</li>
+                            <li>✗ Vague "sources say"</li>
+                        </ul>
+                    </div>
+                    <div className={`p-4 rounded-xl border-2 ${TIER_COLORS[4].bg} ${TIER_COLORS[4].border}`}>
+                        <h4 className={`font-bold ${TIER_COLORS[4].text} mb-2`}>Tier 4: Unverified</h4>
+                        <ul className="text-xs text-muted-green space-y-1">
+                            <li>✗ No real sources</li>
+                            <li>✗ "My cousin told me"</li>
+                            <li>✗ 100% guaranteed claims</li>
+                            <li>✗ Conspiracy theories</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
