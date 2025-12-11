@@ -7,6 +7,8 @@ from pydantic import BaseModel
 from typing import Optional, List
 import requests
 from datetime import datetime
+import pandas as pd
+import os
 
 router = APIRouter()
 
@@ -108,6 +110,34 @@ def match_team_name(team_name: str, match_team_name: str) -> bool:
         if variation.lower() in match_team_name.lower() or match_team_name.lower() in variation.lower():
             return True
     return team_name.lower() in match_team_name.lower() or match_team_name.lower() in team_name.lower()
+
+
+def normalize_team_name(team_name: str) -> str:
+    """Normalize team name for CSV data matching"""
+    # Map display names to CSV names
+    team_mapping = {
+        "Arsenal": "Arsenal",
+        "Aston Villa": "Aston Villa",
+        "Bournemouth": "Bournemouth",
+        "Brentford": "Brentford",
+        "Brighton": "Brighton",
+        "Burnley": "Burnley",
+        "Chelsea": "Chelsea",
+        "Crystal Palace": "Crystal Palace",
+        "Everton": "Everton",
+        "Fulham": "Fulham",
+        "Leeds United": "Leeds",
+        "Liverpool": "Liverpool",
+        "Man City": "Man City",
+        "Man United": "Man United",
+        "Newcastle": "Newcastle",
+        "Nottingham Forest": "Nottm Forest",
+        "Sunderland": "Sunderland",
+        "Tottenham": "Tottenham",
+        "West Ham": "West Ham",
+        "Wolves": "Wolves"
+    }
+    return team_mapping.get(team_name, team_name)
 
 
 def extract_season_from_date(date_str: Optional[str]) -> str:
@@ -330,98 +360,75 @@ async def get_head_to_head_history(
 ):
     """
     Get historical head-to-head matches between two teams.
-    Returns recent matches from the last several seasons.
+    Uses local historical data from processed_premier_league_combined.csv
     """
     try:
-        home_team_id = TEAM_IDS.get(home_team)
-        
-        if not home_team_id:
-            return HeadToHeadResponse(
-                home_team=home_team,
-                away_team=away_team,
-                matches=[],
-                stats=HeadToHeadStats(total_matches=0, home_wins=0, away_wins=0, draws=0)
-            )
-        
-        # Get last 15 matches for the home team
-        response = requests.get(
-            f"{THESPORTSDB_BASE_URL}/eventslast.php",
-            params={"id": home_team_id},
-            timeout=5
-        )
-        
-        if response.status_code != 200:
-            return HeadToHeadResponse(
-                home_team=home_team,
-                away_team=away_team,
-                matches=[],
-                stats=HeadToHeadStats(total_matches=0, home_wins=0, away_wins=0, draws=0)
-            )
-        
-        data = response.json()
-        events = data.get("results", [])
+        # Load the CSV data
+        csv_path = os.path.join(os.path.dirname(__file__), '../data/processed/processed_premier_league_combined.csv')
+        df = pd.read_csv(csv_path)
         
         h2h_matches: List[HeadToHeadMatch] = []
         home_wins = 0
         away_wins = 0
         draws = 0
         
-        for event in events:
-            event_home = event.get("strHomeTeam", "")
-            event_away = event.get("strAwayTeam", "")
+        # Normalize team names in the dataset
+        df['HomeTeam_normalized'] = df['HomeTeam'].apply(normalize_team_name)
+        df['AwayTeam_normalized'] = df['AwayTeam'].apply(normalize_team_name)
+        
+        home_normalized = normalize_team_name(home_team)
+        away_normalized = normalize_team_name(away_team)
+        
+        # Filter for H2H matches (both directions)
+        h2h_df = df[
+            ((df['HomeTeam_normalized'] == home_normalized) & (df['AwayTeam_normalized'] == away_normalized)) |
+            ((df['HomeTeam_normalized'] == away_normalized) & (df['AwayTeam_normalized'] == home_normalized))
+        ].copy()
+        
+        # Sort by date descending to get most recent first
+        h2h_df['Date'] = pd.to_datetime(h2h_df['Date'])
+        h2h_df = h2h_df.sort_values('Date', ascending=False).head(limit)
+        
+        # Process each match
+        for _, row in h2h_df.iterrows():
+            # Determine the result from the row's perspective
+            if row['HomeTeam_normalized'] == home_normalized:
+                # This is from home team's perspective
+                match_home_score = int(row['FTHG']) if pd.notna(row['FTHG']) else None
+                match_away_score = int(row['FTAG']) if pd.notna(row['FTAG']) else None
+                ftr = row['FTR']
+            else:
+                # This is from away team's perspective, so swap
+                match_home_score = int(row['FTAG']) if pd.notna(row['FTAG']) else None
+                match_away_score = int(row['FTHG']) if pd.notna(row['FTHG']) else None
+                # Swap FTR: H->A, A->H, D->D
+                ftr = 'H' if row['FTR'] == 'A' else ('A' if row['FTR'] == 'H' else 'D')
             
-            # Check if both teams match
-            home_match = match_team_name(home_team, event_home)
-            away_match = match_team_name(away_team, event_away)
+            # Determine result
+            result = None
+            if match_home_score is not None and match_away_score is not None:
+                if ftr == 'H':
+                    result = "Home Win"
+                    home_wins += 1
+                elif ftr == 'A':
+                    result = "Away Win"
+                    away_wins += 1
+                else:
+                    result = "Draw"
+                    draws += 1
             
-            # Also check reverse
-            reverse_home = match_team_name(home_team, event_away)
-            reverse_away = match_team_name(away_team, event_home)
+            season = str(row['Season'])
+            date_str = row['Date'].strftime('%Y-%m-%d') if pd.notna(row['Date']) else None
             
-            if (home_match and away_match) or (reverse_home and reverse_away):
-                # Found a head-to-head match
-                home_score = event.get("intHomeScore")
-                away_score = event.get("intAwayScore")
-                
-                # If scores are swapped, fix them
-                if reverse_home and reverse_away:
-                    home_score, away_score = away_score, home_score
-                    event_home, event_away = event_away, event_home
-                
-                try:
-                    home_score = int(home_score) if home_score else None
-                    away_score = int(away_score) if away_score else None
-                except (ValueError, TypeError):
-                    home_score = None
-                    away_score = None
-                
-                result = None
-                if home_score is not None and away_score is not None:
-                    if home_score > away_score:
-                        result = "Home Win"
-                        home_wins += 1
-                    elif home_score < away_score:
-                        result = "Away Win"
-                        away_wins += 1
-                    else:
-                        result = "Draw"
-                        draws += 1
-                
-                match_date = event.get("dateEvent")
-                season = extract_season_from_date(match_date) if match_date else "Unknown"
-                
-                h2h_matches.append(HeadToHeadMatch(
-                    date=match_date,
-                    home_team=home_team,
-                    away_team=away_team,
-                    home_score=home_score,
-                    away_score=away_score,
-                    result=result,
-                    season=season
-                ))
-                
-                if len(h2h_matches) >= limit:
-                    break
+            h2h_matches.append(HeadToHeadMatch(
+                date=date_str,
+                home_team=home_team,
+                away_team=away_team,
+                home_score=match_home_score,
+                away_score=match_away_score,
+                result=result,
+                season=season
+            ))
         
         stats = HeadToHeadStats(
             total_matches=len(h2h_matches),

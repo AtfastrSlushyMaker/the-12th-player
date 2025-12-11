@@ -76,7 +76,7 @@ export default function MatchPredictor() {
                 result.confidence
             );
             setComparison(comparisonData);
-            
+
             // Also fetch H2H history
             fetchH2hHistory(homeTeam, awayTeam);
         } catch (err) {
@@ -369,8 +369,8 @@ export default function MatchPredictor() {
 
                                             {/* Prediction Accuracy */}
                                             <div className={`p-6 rounded-xl border-2 ${comparison.is_correct
-                                                    ? 'bg-green-50 border-green-300'
-                                                    : 'bg-red-50 border-red-300'
+                                                ? 'bg-green-50 border-green-300'
+                                                : 'bg-red-50 border-red-300'
                                                 }`}>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3">
@@ -448,11 +448,10 @@ export default function MatchPredictor() {
                                                             <span className="text-sm font-semibold">{match.home_score ?? '-'}</span>
                                                             <span className="text-muted-green">-</span>
                                                             <span className="text-sm font-semibold">{match.away_score ?? '-'}</span>
-                                                            <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
-                                                                match.result === 'Home Win' ? 'bg-green-100 text-green-700' :
-                                                                match.result === 'Draw' ? 'bg-yellow-100 text-yellow-700' :
-                                                                'bg-red-100 text-red-700'
-                                                            }`}>
+                                                            <span className={`text-xs font-bold px-2 py-1 rounded-lg ${match.result === 'Home Win' ? 'bg-green-100 text-green-700' :
+                                                                    match.result === 'Draw' ? 'bg-yellow-100 text-yellow-700' :
+                                                                        'bg-red-100 text-red-700'
+                                                                }`}>
                                                                 {match.result || 'TBD'}
                                                             </span>
                                                         </div>
