@@ -36,6 +36,24 @@ const TIER_ICONS = {
     4: AlertCircle,
 };
 
+const EXAMPLE_ARTICLES = [
+    {
+        title: 'Official: Manchester United sign new striker',
+        text: 'Manchester United Football Club is delighted to announce the signing of forward Marcus Johnson from Liverpool FC on a five-year deal. The England international completed his medical at Carrington Training Centre this morning.',
+        expectedTier: 1
+    },
+    {
+        title: 'Arsenal prepare bid for top midfielder',
+        text: 'Arsenal are reportedly preparing a £50m bid for Inter Milan midfielder according to sources close to the club. The Gunners have been tracking the player throughout the season and are ready to make their move.',
+        expectedTier: 2
+    },
+    {
+        title: 'EXCLUSIVE: Chelsea star demands transfer',
+        text: 'A Chelsea star is demanding an immediate transfer away from Stamford Bridge after a bust-up with the manager, sources claim. The player is said to be furious about lack of playing time.',
+        expectedTier: 3
+    }
+];
+
 export default function NewsClassifier() {
     const { expertMode } = useAppStore();
     const [title, setTitle] = useState('');
@@ -96,6 +114,26 @@ export default function NewsClassifier() {
                 <p className="text-xl text-muted-green max-w-2xl mx-auto">
                     Verify Premier League news source credibility with Naive Bayes text classification
                 </p>
+            </div>
+
+            {/* Example Articles */}
+            <div className="glass-card p-6 mb-6 animate-slide-up">
+                <h3 className="text-sm font-bold text-muted-green uppercase tracking-wide mb-3">Try Example Articles</h3>
+                <div className="grid md:grid-cols-3 gap-3">
+                    {EXAMPLE_ARTICLES.map((article, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => { setTitle(article.title); setText(article.text); }}
+                            className="p-3 rounded-xl bg-[#e9f9ec] hover:bg-white border border-[#0b6623]/20 text-left transition-all group"
+                        >
+                            <div className="text-xs font-semibold stat-green mb-1">Example {idx + 1}</div>
+                            <div className="text-xs text-muted-green line-clamp-2">{article.title}</div>
+                            <div className="text-[10px] text-muted-green mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                Expected: Tier {article.expectedTier}
+                            </div>
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Input Form */}

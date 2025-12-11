@@ -8,6 +8,10 @@
        define it explicitly or apply a concrete class like border-white/10 where required. */
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     /* Light football pitch-inspired background */
     @apply min-h-screen relative text-[#0d1b0d] bg-[#f4fff4];
@@ -181,6 +185,37 @@
 
   .animate-bounce-slow {
     animation: bounceSlow 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: .8;
+    }
+  }
+
+  /* Text truncation utilities */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   /* Scrollbar Styling */

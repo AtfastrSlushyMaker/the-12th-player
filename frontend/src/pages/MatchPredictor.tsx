@@ -13,6 +13,8 @@ export default function MatchPredictor() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [result, setResult] = useState<MatchPredictionResponse | null>(null);
+    const [matchHistory, setMatchHistory] = useState<MatchPredictionResponse[]>([]);
+    const [showComparison, setShowComparison] = useState(false);
 
     const teams = [
         'Arsenal', 'Aston Villa', 'Bournemouth', 'Brentford', 'Brighton',
@@ -46,11 +48,33 @@ export default function MatchPredictor() {
 
             const prediction = await predictMatch(request);
             setResult(prediction);
+            setMatchHistory(prev => [{
+                ...prediction,
+                home_team: homeTeam,
+                away_team: awayTeam
+            } as any, ...prev].slice(0, 5)); // Keep last 5 predictions
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Failed to predict match outcome');
         } finally {
             setLoading(false);
         }
+    };
+
+    const exportResult = () => {
+        if (!result) return;
+        const data = `Match Prediction\n\nHome: ${homeTeam}\nAway: ${awayTeam}\nPrediction: ${result.prediction}\nConfidence: ${result.confidence}\n\nProbabilities:\nHome Win: ${(result.probabilities.home_win * 100).toFixed(1)}%\nDraw: ${(result.probabilities.draw * 100).toFixed(1)}%\nAway Win: ${(result.probabilities.away_win * 100).toFixed(1)}%`;
+        const blob = new Blob([data], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `match-prediction-${homeTeam}-vs-${awayTeam}.txt`;
+        a.click();
+    };
+
+    const swapTeams = () => {
+        const temp = homeTeam;
+        setHomeTeam(awayTeam);
+        setAwayTeam(temp);
     };
 
     const getOutcomeColor = (outcome: string) => {
@@ -74,18 +98,18 @@ export default function MatchPredictor() {
                 </div>
 
                 {/* Team Selection */}
-                <div className="glass-card p-8 md:p-10 mb-8 animate-slide-up">
-                    <div className="grid md:grid-cols-2 gap-8">
+                <div className="glass-card p-6 md:p-8 lg:p-10 mb-8 animate-slide-up">
+                    <div className="grid md:grid-cols-2 gap-6 md:gap-8">
                         {/* Home Team */}
                         <div className="space-y-3">
-                            <label className="flex items-center gap-2 text-sm font-bold text-muted-green uppercase tracking-wide">
+                            <label className="flex items-center gap-2 text-xs md:text-sm font-bold text-muted-green uppercase tracking-wide">
                                 <Shield className="w-4 h-4 stat-green" />
                                 Home Team
                             </label>
                             <select
                                 value={homeTeam}
                                 onChange={(e) => setHomeTeam(e.target.value)}
-                                className="input-glass text-lg font-semibold"
+                                className="input-glass text-base md:text-lg font-semibold"
                             >
                                 <option value="" className="bg-white text-[#0d1b0d]">Select home team...</option>
                                 {teams.map((team) => (
@@ -104,14 +128,14 @@ export default function MatchPredictor() {
 
                         {/* Away Team */}
                         <div className="space-y-3">
-                            <label className="flex items-center gap-2 text-sm font-bold text-muted-green uppercase tracking-wide">
+                            <label className="flex items-center gap-2 text-xs md:text-sm font-bold text-muted-green uppercase tracking-wide">
                                 <Shield className="w-4 h-4 stat-green" />
                                 Away Team
                             </label>
                             <select
                                 value={awayTeam}
                                 onChange={(e) => setAwayTeam(e.target.value)}
-                                className="input-glass text-lg font-semibold"
+                                className="input-glass text-base md:text-lg font-semibold"
                             >
                                 <option value="" className="bg-white text-[#0d1b0d]">Select away team...</option>
                                 {teams.map((team) => (
@@ -146,6 +170,26 @@ export default function MatchPredictor() {
                             </>
                         )}
                     </button>
+
+                    {/* Additional Actions */}
+                    <div className="flex gap-3 mt-4">
+                        <button
+                            onClick={swapTeams}
+                            disabled={!homeTeam || !awayTeam}
+                            className="flex-1 px-4 py-2 rounded-xl bg-[#e9f9ec] hover:bg-white border border-[#0b6623]/20 text-sm font-medium stat-green transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Swords className="w-4 h-4 inline mr-2" />
+                            Swap Teams
+                        </button>
+                        {matchHistory.length > 0 && (
+                            <button
+                                onClick={() => setShowComparison(!showComparison)}
+                                className="flex-1 px-4 py-2 rounded-xl bg-[#e9f9ec] hover:bg-white border border-[#0b6623]/20 text-sm font-medium stat-green transition-colors"
+                            >
+                                {showComparison ? 'Hide' : 'Show'} History ({matchHistory.length})
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Error */}
@@ -153,6 +197,30 @@ export default function MatchPredictor() {
 
                 {/* Loading */}
                 {loading && <Loading message="Crunching the numbers..." />}
+
+                {/* Match History Comparison */}
+                {showComparison && matchHistory.length > 0 && (
+                    <div className="glass-card p-6 mb-8 animate-slide-up">
+                        <h3 className="text-lg font-bold stat-green mb-4">Recent Predictions</h3>
+                        <div className="space-y-3">
+                            {matchHistory.map((match: any, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-[#e9f9ec] border border-[#0b6623]/10">
+                                    <div className="flex items-center gap-3">
+                                        <img src={getTeamLogo(match.home_team)} alt={match.home_team} className="w-6 h-6 object-contain" />
+                                        <span className="font-semibold text-sm">{match.home_team}</span>
+                                        <span className="text-muted-green text-xs">vs</span>
+                                        <span className="font-semibold text-sm">{match.away_team}</span>
+                                        <img src={getTeamLogo(match.away_team)} alt={match.away_team} className="w-6 h-6 object-contain" />
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-xs font-bold stat-green">{match.prediction}</div>
+                                        <div className="text-[10px] text-muted-green">{match.confidence}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Results */}
                 {result && (
@@ -171,11 +239,20 @@ export default function MatchPredictor() {
                                     {result.prediction}
                                 </h2>
 
-                                <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-[#e9f9ec] border border-[#0b6623]/15">
-                                    <span className="text-muted-green">Confidence:</span>
-                                    <span className={`text-xl font-bold uppercase tracking-wide ${getOutcomeColor(result.prediction).text}`}>
-                                        {result.confidence}
-                                    </span>
+                                <div className="flex items-center gap-3 justify-center">
+                                    <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-[#e9f9ec] border border-[#0b6623]/15">
+                                        <span className="text-muted-green">Confidence:</span>
+                                        <span className={`text-xl font-bold uppercase tracking-wide ${getOutcomeColor(result.prediction).text}`}>
+                                            {result.confidence}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={exportResult}
+                                        className="p-3 rounded-xl bg-[#e9f9ec] hover:bg-white border border-[#0b6623]/15 transition-colors"
+                                        title="Export result"
+                                    >
+                                        <Zap className="w-5 h-5 stat-green" />
+                                    </button>
                                 </div>
                             </div>
                         </div>

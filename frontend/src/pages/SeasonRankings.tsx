@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getAvailableSeasons, predictSeasonFromData, getModelInfo, getForecast202526, type SeasonRankingResponse, type ModelInfo } from '@/lib/api';
 import { useAppStore } from '@/store/appStore';
-import { RefreshCcw, TrendingUp, Trophy, Target, CheckCircle, Sparkles } from 'lucide-react';
+import { RefreshCcw, TrendingUp, Trophy, Target, CheckCircle, Sparkles, Download, HelpCircle } from 'lucide-react';
 import ExpertPanel from '@/components/ExpertPanel';
 import { getTeamLogo } from '@/lib/teamLogos';
 
@@ -15,6 +15,7 @@ export default function SeasonRankings() {
   const [data, setData] = useState<SeasonRankingResponse | null>(null);
   const [forecast, setForecast] = useState<SeasonRankingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   // Load available seasons on mount
   useEffect(() => {
@@ -24,22 +25,22 @@ export default function SeasonRankings() {
         setSelectedSeason(res.default);
       })
       .catch(() => setError('Failed to load available seasons'));
-    
+
     // Load 2025-26 forecast on mount
     getForecast202526()
       .then(res => setForecast(res))
-      .catch(() => {}) // Silently fail if not available
+      .catch(() => { }) // Silently fail if not available
   }, []);
 
   useEffect(() => {
     if (expertMode) {
-      getModelInfo('bo1').then(setModelInfo).catch(() => {});
+      getModelInfo('bo1').then(setModelInfo).catch(() => { });
     }
   }, [expertMode]);
 
   const generatePredictions = async () => {
     if (!selectedSeason) return;
-    
+
     setLoading(true);
     setError(null);
     try {
@@ -52,6 +53,22 @@ export default function SeasonRankings() {
     }
   };
 
+  const exportRankings = () => {
+    if (!data) return;
+    const csv = [
+      ['Rank', 'Team', 'Predicted Position', 'Actual Position', 'Difference'].join(','),
+      ...data.predictions.map(r =>
+        [r.rank, r.team, r.predicted_position, r.actual_position || 'N/A', r.position_diff || 'N/A'].join(',')
+      )
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `season-rankings-${selectedSeason}.csv`;
+    a.click();
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
       {/* Header */}
@@ -59,7 +76,25 @@ export default function SeasonRankings() {
         <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl pl-gradient-primary mb-6 shadow-2xl shadow-[#0b6623]/30">
           <Trophy className="w-10 h-10 text-white" />
         </div>
-        <h1 className="text-5xl md:text-6xl font-extrabold mb-4 pl-gradient-text">Season Rankings</h1>
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <h1 className="text-5xl md:text-6xl font-extrabold pl-gradient-text">Season Rankings</h1>
+          <div className="relative">
+            <button
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+              className="p-2 rounded-full hover:bg-[#e9f9ec] transition-colors"
+            >
+              <HelpCircle className="w-5 h-5 text-muted-green" />
+            </button>
+            {showTooltip && (
+              <div className="absolute top-full mt-2 right-0 w-64 p-3 rounded-xl glass-card text-xs text-left z-10 animate-fade-in">
+                <p className="text-muted-green">
+                  Our KNN model predicts final league positions based on historical performance metrics with 93.8% accuracy (R² score).
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
         <p className="text-xl text-muted-green max-w-2xl mx-auto">
           Predict final league standings using KNN regression on real historical data
         </p>
@@ -98,14 +133,14 @@ export default function SeasonRankings() {
                       conference: { color: 'border-emerald-400 bg-emerald-50', dot: 'bg-emerald-500', label: 'Conference League' },
                       relegation: { color: 'border-red-400 bg-red-50', dot: 'bg-red-500', label: 'Relegation' },
                     };
-                    
+
                     let zone;
                     if (row.rank <= 4) zone = zoneConfigs.champions;
                     else if (row.rank === 5) zone = zoneConfigs.europa;
                     else if (row.rank === 6) zone = zoneConfigs.conference;
                     else if (row.rank >= 18) zone = zoneConfigs.relegation;
                     else zone = { color: 'border-gray-400 bg-gray-50', dot: 'bg-gray-500', label: 'Mid Table' };
-                    
+
                     return (
                       <tr key={row.team} className="border-b border-[#0b6623]/10 hover:bg-[#0b6623]/5 transition-colors">
                         <td className="p-4">
@@ -120,8 +155,8 @@ export default function SeasonRankings() {
                           </div>
                         </td>
                         <td className="p-4 text-right">
-                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold border" style={{borderColor: zoneConfigs.champions.color.split(' ')[1], background: zoneConfigs.champions.color.split(' ')[2]}}>
-                            <span className={`w-2 h-2 rounded-full`} style={{background: zone.dot.replace('bg-', '')}}></span>
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold border" style={{ borderColor: zoneConfigs.champions.color.split(' ')[1], background: zoneConfigs.champions.color.split(' ')[2] }}>
+                            <span className={`w-2 h-2 rounded-full`} style={{ background: zone.dot.replace('bg-', '') }}></span>
                             {zone.label}
                           </span>
                         </td>
@@ -171,14 +206,25 @@ export default function SeasonRankings() {
             </label>
           </div>
 
-          <button
-            onClick={generatePredictions}
-            disabled={loading || !selectedSeason}
-            className="pl-btn-primary flex items-center justify-center gap-2"
-          >
-            {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
-            {loading ? 'Predicting...' : 'Generate Predictions'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={generatePredictions}
+              disabled={loading || !selectedSeason}
+              className="pl-btn-primary flex items-center justify-center gap-2 flex-1"
+            >
+              {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
+              {loading ? 'Predicting...' : 'Generate Predictions'}
+            </button>
+            {data && (
+              <button
+                onClick={exportRankings}
+                className="px-4 py-3 rounded-xl bg-[#e9f9ec] hover:bg-white border border-[#0b6623]/20 stat-green transition-colors"
+                title="Export rankings"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -249,7 +295,7 @@ export default function SeasonRankings() {
               </tr>
             </thead>
             <tbody>
-              {data.predictions.sort((a,b) => a.rank - b.rank).map(row => {
+              {data.predictions.sort((a, b) => a.rank - b.rank).map(row => {
                 // Determine zone based on predicted position
                 // Conference League started in 2021-22 season
                 const hasConferenceLeague = selectedSeason >= '2021-22';
@@ -266,7 +312,7 @@ export default function SeasonRankings() {
                   return { label: 'Mid-Table', color: 'bg-gray-100 text-gray-600 border-gray-300', dot: 'bg-gray-400' };
                 };
                 const zone = getZone(row.rank);
-                
+
                 // Row border color based on zone
                 const getRowBorder = (rank: number) => {
                   if (rank <= 4) return 'border-l-4 border-l-blue-500';
@@ -275,7 +321,7 @@ export default function SeasonRankings() {
                   if (rank >= 18) return 'border-l-4 border-l-red-500';
                   return '';
                 };
-                
+
                 return (
                   <tr key={row.team} className={`border-t border-[#0b6623]/10 hover:bg-[#f0fff0] transition-colors ${getRowBorder(row.rank)}`}>
                     <td className="p-4">
@@ -296,11 +342,10 @@ export default function SeasonRankings() {
                     {compareActual && (
                       <td className="p-4">
                         {row.position_diff !== undefined ? (
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold ${
-                            row.position_diff === 0 ? 'bg-green-100 text-green-700' :
-                            row.position_diff <= 2 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold ${row.position_diff === 0 ? 'bg-green-100 text-green-700' :
+                              row.position_diff <= 2 ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                            }`}>
                             {row.position_diff === 0 && <CheckCircle className="w-3 h-3" />}
                             {row.position_diff === 0 ? 'Exact' : `±${row.position_diff}`}
                           </span>
@@ -338,7 +383,7 @@ export default function SeasonRankings() {
 
       <ExpertPanel title="Season Rankings Model Details" info={modelInfo} loading={expertMode && !modelInfo}>
         <p className="text-xs text-muted-green leading-relaxed">
-          This model uses KNN Regression trained on {seasons.length}+ seasons of Premier League data. 
+          This model uses KNN Regression trained on {seasons.length}+ seasons of Premier League data.
           It predicts final league positions based on team statistics like wins, goals scored, and clean sheet rate.
         </p>
       </ExpertPanel>

@@ -133,6 +133,7 @@ export default function Home() {
                         <div className="flex flex-wrap items-center justify-center gap-4">
                             <Link
                                 to="/match-predictor"
+                                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                                 className="group px-8 py-4 rounded-2xl font-bold text-lg pl-gradient-primary hover:brightness-110 transform hover:scale-105 transition-all duration-300 shadow-2xl shadow-[#37003c]/50 flex items-center gap-2"
                             >
                                 Predict a Match
@@ -140,6 +141,7 @@ export default function Home() {
                             </Link>
                             <Link
                                 to="/season-rankings"
+                                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                                 className="px-8 py-4 rounded-2xl font-bold text-lg bg-white hover:bg-[#e9f9ec] border border-[#0b6623]/15 transform hover:scale-105 transition-all duration-300 text-[#0d1b0d]"
                             >
                                 View Rankings
@@ -147,26 +149,26 @@ export default function Home() {
                         </div>
 
                         {/* Quick Stats - Real Data */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 max-w-4xl mx-auto">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mt-16 max-w-4xl mx-auto">
                             {[
-                                { icon: BarChart3, label: 'ML Models', value: '4', color: 'green' },
+                                { icon: BarChart3, label: 'ML Models', value: '5', color: 'green' },
                                 { icon: Calendar, label: 'Seasons', value: loading ? '...' : stats.seasons.toString(), color: 'green' },
-                                { icon: Users, label: 'Teams Tracked', value: loading ? '...' : stats.teams.toString(), color: 'green' },
-                                { icon: TrendingUp, label: 'Matches Analyzed', value: loading ? '...' : stats.matches.toLocaleString(), color: 'gold' },
+                                { icon: Users, label: 'Teams', value: loading ? '...' : stats.teams.toString(), color: 'green' },
+                                { icon: TrendingUp, label: 'Matches', value: loading ? '...' : stats.matches.toLocaleString(), color: 'gold' },
                             ].map((stat, i) => {
                                 const c = colorMap[stat.color] || colorMap['green'];
                                 return (
-                                <div
-                                    key={stat.label}
-                                    className="glass-card p-6 animate-slide-up hover:bg-white/10 transition-all cursor-pointer group"
-                                    style={{ animationDelay: `${i * 100}ms` }}
-                                >
-                                    <stat.icon className={`w-8 h-8 mx-auto mb-3 ${c.icon} group-hover:scale-110 transition-transform`} />
-                                    <div className={`text-3xl md:text-4xl font-bold pl-gradient-text mb-1`}>
-                                        {stat.value}
+                                    <div
+                                        key={stat.label}
+                                        className="glass-card p-4 md:p-6 animate-slide-up hover:bg-white/10 transition-all cursor-pointer group"
+                                        style={{ animationDelay: `${i * 100}ms` }}
+                                    >
+                                        <stat.icon className={`w-6 h-6 md:w-8 md:h-8 mx-auto mb-2 md:mb-3 ${c.icon} group-hover:scale-110 transition-transform`} />
+                                        <div className={`text-2xl md:text-3xl lg:text-4xl font-bold pl-gradient-text mb-1`}>
+                                            {stat.value}
+                                        </div>
+                                        <div className="text-xs md:text-sm text-muted-green font-medium">{stat.label}</div>
                                     </div>
-                                    <div className="text-sm text-muted-green font-medium">{stat.label}</div>
-                                </div>
                                 );
                             })}
                         </div>
@@ -227,13 +229,15 @@ export default function Home() {
 
                                     {/* Footer */}
                                     <div className="flex items-center justify-between">
-                                        {(() => { return (
-                                        <div className="px-4 py-2 rounded-lg bg-[#e9f9ec] border border-[#0b6623]/20">
-                                            <span className="text-sm font-semibold stat-green">
-                                                {feature.stats}
-                                            </span>
-                                        </div>
-                                        ); })()}
+                                        {(() => {
+                                            return (
+                                                <div className="px-4 py-2 rounded-lg bg-[#e9f9ec] border border-[#0b6623]/20">
+                                                    <span className="text-sm font-semibold stat-green">
+                                                        {feature.stats}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })()}
                                         <ArrowRight className="w-6 h-6 text-muted-green group-hover:stat-green group-hover:translate-x-2 transition-all duration-300" />
                                     </div>
                                 </div>

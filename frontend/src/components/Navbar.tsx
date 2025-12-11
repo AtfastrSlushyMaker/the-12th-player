@@ -92,7 +92,7 @@ export default function Navbar() {
 
                 {/* Mobile Menu */}
                 {mobileMenuOpen && (
-                    <div className="md:hidden mt-6 pt-6 border-t border-white/10 space-y-2 animate-slide-up">
+                    <div className="md:hidden mt-6 pt-6 border-t border-[#0b6623]/10 space-y-2 animate-slide-up">
                         {navItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = location.pathname === item.path;
@@ -100,12 +100,15 @@ export default function Navbar() {
                                 <Link
                                     key={item.path}
                                     to={item.path}
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${isActive
-                                        ? 'pl-gradient-primary text-white'
-                                        : 'text-muted-green hover:bg-[#e9f9ec] hover:text-[#0d1b0d]'
+                                    onClick={() => { setMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                    className={`relative px-5 py-3 rounded-xl flex items-center gap-3 font-semibold transition-all duration-300 ${isActive
+                                            ? 'text-[#0d1b0d] bg-[#e9f9ec] shadow-inner'
+                                            : 'text-muted-green hover:text-[#0d1b0d] hover:bg-[#e9f9ec]'
                                         }`}
                                 >
+                                    {isActive && (
+                                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#0b6623] to-[#2ecc71] opacity-10"></div>
+                                    )}
                                     <Icon className="w-5 h-5" />
                                     <span>{item.label}</span>
                                 </Link>
@@ -113,24 +116,21 @@ export default function Navbar() {
                         })}
 
                         <button
-                            onClick={() => {
-                                toggleExpertMode();
-                                setMobileMenuOpen(false);
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${expertMode
-                                ? 'pl-gradient-primary text-white'
-                                : 'text-muted-green hover:bg-[#e9f9ec] hover:text-[#0d1b0d] border border-[#0b6623]/15'
+                            onClick={toggleExpertMode}
+                            className={`w-full px-5 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-3 ${expertMode
+                                    ? 'pl-gradient-primary text-white shadow-lg shadow-[#0b6623]/30'
+                                    : 'bg-[#e9f9ec] text-muted-green hover:bg-white border border-[#0b6623]/15'
                                 }`}
                         >
                             {expertMode ? (
                                 <>
                                     <Sparkles className="w-5 h-5" />
-                                    Expert Mode Active
+                                    Expert Mode
                                 </>
                             ) : (
                                 <>
                                     <Users className="w-5 h-5" />
-                                    Enable Expert Mode
+                                    Normal Mode
                                 </>
                             )}
                         </button>
