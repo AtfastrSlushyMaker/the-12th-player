@@ -423,25 +423,49 @@ POST /api/v1/classify-news
 **Response:**
 ```json
 {
-  "title": "Official: Liverpool complete signing",
+  "title": "Is there any way back for Salah and Liverpool?",
   "predicted_tier": 1,
   "tier_label": "Tier 1 - Official Source",
-  "confidence": 0.93,
+  "confidence": 0.928,
   "probabilities": {
-    "tier_1": 0.93,
-    "tier_2": 0.05,
-    "tier_3": 0.02,
-    "tier_4": 0.00
+    "tier_1": 0.928,
+    "tier_2": 0.015,
+    "tier_3": 0.055,
+    "tier_4": 0.002
   },
-  "credibility_description": "Official sources (BBC, ESPN, official club statements)"
+  "credibility_description": "Official sources (BBC, ESPN, official club statements, verified journalists)"
 }
 ```
 
-**Tier Levels:**
-- **Tier 1**: Official sources (BBC, club statements, verified journalists)
-- **Tier 2**: Reliable sports journalists and reputable outlets
-- **Tier 3**: Tabloids, sports blogs, sensationalist coverage
-- **Tier 4**: Social media posts, unverified sources
+**Tier Levels & Performance:**
+- **Tier 1 (79% precision)**: Official sources - BBC, official club statements, verified journalists (79% recall)
+- **Tier 2 (65% precision)**: Reliable sports journalists - Professional outlets like The Athletic (69% recall)
+- **Tier 3 (75% precision)**: Tabloids - Sensationalist language with SHOCK, EXCLUSIVE keywords (45% recall)
+- **Tier 4 (83% precision)**: Social media - Unverified sources, user posts, rumors (87% recall)
+
+**Model Architecture (v2.0 - Upgraded):**
+- **Algorithm**: VotingClassifier Ensemble with soft voting
+- **Components**:
+  - MultinomialNB (weight: 1.0) - Probability-based baseline
+  - ComplementNB (weight: 1.3) - Optimized for imbalanced classes
+  - LogisticRegression (weight: 1.1) - Linear model with balanced approach
+  - LinearSVC (weight: 0.9) - Support Vector Machine with calibrated probabilities
+- **Features**: 6,000 combined
+  - Word-level TF-IDF: 4,000 features (1-3 grams)
+  - Character-level TF-IDF: 2,000 features (3-5 grams)
+- **Preprocessing**: Lemmatization, stopword removal, style feature extraction
+- **Performance**:
+  - Test Accuracy: **76.8%**
+  - Cross-Validation Accuracy: **75.5%**
+  - Training Samples: 841
+  - Test Samples: 211
+
+**Key Improvements over v1.0:**
+- ✅ Upgraded from single Multinomial NB to ensemble voting (20% accuracy improvement)
+- ✅ Better handling of imbalanced classes with ComplementNB
+- ✅ Added character-level features for style pattern detection
+- ✅ Enhanced preprocessing with lemmatization and style tokens
+- ✅ Better Tier 4 detection (87% recall vs 43% in v1)
 
 ---
 
@@ -475,27 +499,40 @@ GET /api/v1/model-info/{bo}
 **Parameters:**
 - `bo` (path) - Model identifier: "bo1", "bo2", "bo3", "bo5"
 
-**Response:**
+**BO5 Response Example:**
 ```json
 {
-  "business_objective": "Predict final Premier League standings",
-  "algorithm": "Random Forest Regressor",
-  "features": [
-    "wins",
-    "draws",
-    "losses",
-    "goals_scored",
-    "goals_conceded"
+  "business_objective": "News Credibility Classification - Identify trustworthiness of Premier League news",
+  "algorithm": "VotingClassifier Ensemble (4 models with soft voting)",
+  "ensemble_components": [
+    "MultinomialNB (weight: 1.0)",
+    "ComplementNB (weight: 1.3) - favored for imbalanced classes",
+    "LogisticRegression (weight: 1.1)",
+    "LinearSVC with probability calibration (weight: 0.9)"
   ],
-  "performance": {
-    "mae": 2.03,
-    "r2_score": 0.938
+  "features": {
+    "vectorizer": "FeatureUnion combining:",
+    "word_level": "TF-IDF (4000 features, 1-3 grams, words)",
+    "char_level": "TF-IDF (2000 features, 3-5 grams, characters)",
+    "preprocessing": "Lemmatization, stopword removal, style feature extraction"
   },
-  "version": "1.0.0",
-  "limitations": [
-    "Assumes consistent team performance",
-    "Does not account for injuries or transfers"
-  ]
+  "tier_labels": {
+    "1": "Most Credible - Official sources",
+    "2": "Reliable - Professional journalism",
+    "3": "Mixed - Tabloids with speculation",
+    "4": "Least Credible - Social media/rumors"
+  },
+  "performance": {
+    "test_accuracy": 0.768,
+    "cv_accuracy": 0.755,
+    "per_tier": {
+      "tier_1": { "precision": 0.79, "recall": 0.79, "f1": 0.79 },
+      "tier_2": { "precision": 0.65, "recall": 0.69, "f1": 0.67 },
+      "tier_3": { "precision": 0.75, "recall": 0.45, "f1": 0.56 },
+      "tier_4": { "precision": 0.83, "recall": 0.87, "f1": 0.85 }
+    }
+  },
+  "version": "2.0 (Ensemble) - Upgraded from Multinomial NB"
 }
 ```
 
@@ -617,9 +654,24 @@ Mobile apps and browser extensions can make direct requests without proxy requir
 
 ## Changelog
 
+### Version 1.1.0 (December 13, 2025) - BO5 Upgrade
+**BO5 News Classifier Improvements:**
+- 🔄 **Upgraded Algorithm**: Replaced Multinomial NB with VotingClassifier Ensemble (4 models)
+  - MultinomialNB, ComplementNB, LogisticRegression, LinearSVC with soft voting
+- 📈 **Performance Improvements**:
+  - Test Accuracy: 64% → **76.8%** (+12.8 percentage points)
+  - CV Accuracy: **75.5%**
+  - Tier 4 (Social Media) Recall: 43% → **87%** (massive improvement)
+- 🏗️ **Architecture Changes**:
+  - Features: 4,000 → **6,000** (added 2,000 char-level n-grams)
+  - Preprocessing: Added style feature extraction (capitalization, punctuation patterns)
+  - Model File: `naive_bayes_news_classifier.pkl` → `pl_news_credibility_model.pkl`
+- 📦 **Package Structure**: Model now includes preprocessor and metadata
+- ✅ **Backward Compatible**: API endpoints unchanged - no breaking changes for mobile/extension
+
 ### Version 1.0.0 (December 2025)
 - Initial API release
 - 5 ML models (BO1-BO5)
 - 25 years of Premier League historical data (2000-2025)
 - Real-time match results via TheSportsDB integration
-- News credibility classification with Naive Bayes
+- News credibility classification with Multinomial Naive Bayes

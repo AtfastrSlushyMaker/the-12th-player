@@ -53,8 +53,18 @@ def load_bo4(position: str) -> Dict[str, Any]:
 
 @lru_cache()
 def load_naive_bayes_news_classifier() -> Dict[str, Any]:
-    """Load BO5 Naive Bayes News Credibility Classifier"""
-    return joblib.load(MODELS_DIR / "naive_bayes_news_classifier.pkl")
+    """
+    Load BO5 Ensemble News Credibility Classifier (upgraded)
+    
+    Returns package dict with:
+    - 'ensemble_model': VotingClassifier with 4 models
+    - 'vectorizer': FeatureUnion with word + char TF-IDF
+    - 'preprocessor': TextPreprocessor instance
+    - 'tier_names': Human-readable tier labels
+    - 'test_accuracy': 0.768
+    - 'cv_accuracy': 0.755
+    """
+    return joblib.load(MODELS_DIR / "pl_news_credibility_model.pkl")
 
 def get_model_info(model_data: Dict[str, Any]) -> Dict[str, Any]:
     """Extract metadata from model dictionary"""

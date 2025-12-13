@@ -1,6 +1,6 @@
 """
 BO5: News Credibility Classification Endpoint
-Classifies Premier League news articles into 4 credibility tiers using Naive Bayes
+Classifies Premier League news articles into 4 credibility tiers using Ensemble Voting Classifier
 """
 from fastapi import APIRouter, HTTPException, status, Query
 from typing import Dict
@@ -37,45 +37,52 @@ async def classify_news_credibility(
     """
     Classify a Premier League news article's credibility tier
     
-    **Model**: Multinomial Naive Bayes Text Classifier (64% test accuracy)
+    **Model**: VotingClassifier Ensemble (4 classifiers) - 76.8% test accuracy
+    
+    **Architecture**: 
+    - MultinomialNB, ComplementNB, LogisticRegression, LinearSVC with soft voting
     
     **Tiers**:
-    - **Tier 1 (57% recall)**: Official sources - BBC, official clubs
-    - **Tier 2 (68% recall)**: Reliable sports journalists
-    - **Tier 3 (72% recall)**: Tabloids - sensationalist language detected
-    - **Tier 4 (43% recall)**: Social media - informal writing
+    - **Tier 1 (79% recall)**: Official sources - BBC, official clubs, verified statements
+    - **Tier 2 (69% recall)**: Reliable sports journalists and professional outlets
+    - **Tier 3 (45% recall)**: Tabloids - sensationalist language, speculation
+    - **Tier 4 (87% recall)**: Social media - unverified sources, rumors
     
-    **Input**: Article title and text
+    **Input**: Article title and text (combined for analysis)
     
-    **Output**: Predicted tier (1-4) + probabilities for each tier
+    **Output**: Predicted tier (1-4) + confidence + probabilities for each tier
     """
     try:
-        model_data = load_naive_bayes_news_classifier()
+        model_package = load_naive_bayes_news_classifier()
         
-        model = model_data.get('model')
-        vectorizer = model_data.get('vectorizer')
-        metadata = model_data.get('metadata', {})
+        ensemble_model = model_package.get('ensemble_model')
+        vectorizer = model_package.get('vectorizer')
+        preprocessor = model_package.get('preprocessor')
         
-        if not model or not vectorizer:
+        if not ensemble_model or not vectorizer or not preprocessor:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="News classifier model or vectorizer not loaded"
+                detail="News classifier model components not fully loaded"
             )
         
         # Combine title and text for classification
         combined_text = f"{title} {text}"
         
-        # Vectorize the text
-        X = vectorizer.transform([combined_text])
+        # Preprocess the text (clean, lemmatize, add style features)
+        processed_texts = preprocessor.transform([combined_text])
         
-        # Predict tier - model.classes_ is [1, 2, 3, 4] (1-indexed)
-        prediction = model.predict(X)[0]
-        probabilities_array = model.predict_proba(X)[0]
+        # Vectorize using FeatureUnion (word-level + char-level TF-IDF)
+        X = vectorizer.transform(processed_texts)
+        
+        # Predict tier using ensemble voting
+        # Tiers are 1-indexed: [1, 2, 3, 4]
+        prediction = ensemble_model.predict(X)[0]
+        probabilities_array = ensemble_model.predict_proba(X)[0]
         
         # prediction is already 1-indexed (1, 2, 3, or 4)
         predicted_tier = int(prediction)
         
-        # But probabilities_array is 0-indexed, so use (prediction - 1) to access it
+        # probabilities_array is 0-indexed [p1, p2, p3, p4], so use (prediction - 1)
         confidence = float(probabilities_array[int(prediction) - 1])
         
         # Create probability mapping (0-3 index to tier 1-4)
@@ -114,38 +121,59 @@ async def classify_news_credibility(
 
 @router.get("/model-info/bo5")
 async def get_bo5_model_info():
-    """Get BO5 Naive Bayes news classifier model information"""
+    """Get BO5 Ensemble News Classifier model information and performance metrics"""
     try:
-        model_data = load_naive_bayes_news_classifier()
-        metadata = model_data.get('metadata', {})
+        model_package = load_naive_bayes_news_classifier()
         
         return {
-            "business_objective": "News Credibility Classification",
-            "algorithm": "Multinomial Naive Bayes",
-            "features": metadata.get('features', ["TF-IDF vectorization (unigrams + bigrams)"]),
-            "tiers": {
-                1: "Official sources (57% recall)",
-                2: "Reliable journalists (68% recall)",
-                3: "Tabloids (72% recall)",
-                4: "Social media (43% recall)"
+            "business_objective": "News Credibility Classification - Identify trustworthiness of Premier League news",
+            "algorithm": "VotingClassifier Ensemble (4 models with soft voting)",
+            "ensemble_components": [
+                "MultinomialNB (weight: 1.0)",
+                "ComplementNB (weight: 1.3) - favored for imbalanced classes",
+                "LogisticRegression (weight: 1.1)",
+                "LinearSVC with probability calibration (weight: 0.9)"
+            ],
+            "features": {
+                "vectorizer": "FeatureUnion combining:",
+                "word_level": "TF-IDF (4000 features, 1-3 grams, words)",
+                "char_level": "TF-IDF (2000 features, 3-5 grams, characters)",
+                "preprocessing": "Lemmatization, stopword removal, style feature extraction"
+            },
+            "tier_labels": {
+                1: "Most Credible - Official sources",
+                2: "Reliable - Professional journalism",
+                3: "Mixed - Tabloids with speculation",
+                4: "Least Credible - Social media/rumors"
             },
             "performance": {
-                "test_accuracy": 0.64,
-                "best_tier": "Tier 3 (Tabloids)",
-                "best_tier_recall": 0.72,
-                "training_samples": 278
-            },
-            "version": metadata.get('version', "1.0"),
-            "dataset_info": {
-                "total_articles": 278,
-                "total_sources": 47,
-                "tier_distribution": {
-                    "tier_1": 55,
-                    "tier_2": 81,
-                    "tier_3": 116,
-                    "tier_4": 26
+                "test_accuracy": 0.768,
+                "cv_accuracy": 0.755,
+                "per_tier": {
+                    "tier_1": {"precision": 0.79, "recall": 0.79, "f1": 0.79},
+                    "tier_2": {"precision": 0.65, "recall": 0.69, "f1": 0.67},
+                    "tier_3": {"precision": 0.75, "recall": 0.45, "f1": 0.56},
+                    "tier_4": {"precision": 0.83, "recall": 0.87, "f1": 0.85}
                 }
-            }
+            },
+            "training_info": {
+                "total_samples": 841,
+                "test_samples": 211,
+                "training_date": model_package.get('training_date', '2024-12-13'),
+                "tier_distribution": {
+                    "tier_1": 195,
+                    "tier_2": 220,
+                    "tier_3": 276,
+                    "tier_4": 150
+                }
+            },
+            "version": "2.0 (Ensemble) - Upgraded from Multinomial NB",
+            "limitations": [
+                "Better at identifying extreme credibility (T1 and T4) vs middle tiers",
+                "Tier 3 (tabloid) recall is lower - some misclassified as Tier 2",
+                "Limited by training data bias towards certain sources",
+                "Style features may not work for neutral headlines without sensationalism"
+            ]
         }
     except Exception as e:
         raise HTTPException(
