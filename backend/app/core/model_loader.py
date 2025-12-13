@@ -7,6 +7,17 @@ import json
 from pathlib import Path
 from functools import lru_cache
 from typing import Dict, Any
+import sys
+
+try:
+    # Ensure TextPreprocessor is resolvable during joblib unpickling
+    from app.core.preprocessing import TextPreprocessor
+    # Map the symbol to __main__ for models pickled with class defined in __main__
+    sys.modules.setdefault('__main__', sys.modules.get('__main__'))
+    setattr(sys.modules['__main__'], 'TextPreprocessor', TextPreprocessor)
+except Exception:
+    # Safe fallback; unpickling may still work if not required
+    pass
 
 MODELS_DIR = Path(__file__).parent.parent.parent / "models"
 
