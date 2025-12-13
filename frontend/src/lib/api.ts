@@ -263,7 +263,7 @@ export interface ModelInfo {
     filters?: Record<string, any>;
 }
 
-export const getModelInfo = async (bo: 'bo1' | 'bo2' | 'bo3'): Promise<ModelInfo> => {
+export const getModelInfo = async (bo: 'bo1' | 'bo2' | 'bo3' | 'bo5'): Promise<ModelInfo> => {
     const response = await api.get(`/api/v1/model-info/${bo}`);
     return response.data;
 };

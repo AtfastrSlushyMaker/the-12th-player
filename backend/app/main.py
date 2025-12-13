@@ -42,7 +42,8 @@ async def root():
             "season_rankings": "/api/v1/predict-season",
             "match_prediction": "/api/v1/predict-match",
             "team_style": "/api/v1/team-style/{team_name}",
-            "player_recommendations": "/api/v1/players/recommendations"
+            "player_recommendations": "/api/v1/players/recommendations",
+            "news_credibility": "/api/v1/classify-news"
         }
     }
 

@@ -22,7 +22,7 @@ export default function Home() {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                // Fetch real data from API
+                // Fetch real data from API + warm up backend endpoints
                 const [seasonsData, predictionData] = await Promise.all([
                     getAvailableSeasons(),
                     predictSeasonFromData('2024-25', true).catch(() => null)
