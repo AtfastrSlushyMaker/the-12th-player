@@ -6,6 +6,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import bo1, bo2, bo3, bo4, bo5, match_results
 
+# Initialize NLTK data for news classifier preprocessing
+def _init_nltk():
+    """Download required NLTK data for text preprocessing"""
+    try:
+        import nltk
+        nltk.download('punkt', quiet=True)
+        nltk.download('stopwords', quiet=True)
+        nltk.download('wordnet', quiet=True)
+    except Exception as e:
+        # Non-critical - continue if NLTK setup fails
+        pass
+
+_init_nltk()
+
 app = FastAPI(
     title="Premier League Predictions API",
     description="ML-powered predictions for PL season rankings, match outcomes, team styles, and player recommendations",

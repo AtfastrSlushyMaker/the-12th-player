@@ -151,3 +151,163 @@ def rank_players_by_score(df: pd.DataFrame, limit: int = 10) -> pd.DataFrame:
     Returns top N players sorted by score descending
     """
     return df.nlargest(limit, 'predicted_score')
+
+
+# Import NLTK for TextPreprocessor
+import re
+try:
+    import nltk
+    from nltk.corpus import stopwords
+    from nltk.stem import WordNetLemmatizer
+    from nltk.tokenize import word_tokenize
+    
+    # Ensure NLTK data is available
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        nltk.download('punkt', quiet=True)
+    
+    try:
+        nltk.data.find('corpora/stopwords')
+    except LookupError:
+        nltk.download('stopwords', quiet=True)
+    
+    try:
+        nltk.data.find('corpora/wordnet')
+    except LookupError:
+        nltk.download('wordnet', quiet=True)
+except:
+    pass
+
+
+class TextPreprocessor:
+    """
+    Multi-stage text preprocessing for news credibility classification.
+    
+    Stages:
+    1. Basic cleaning (lowercase, remove URLs, HTML, mentions)
+    2. Lemmatization and stopword removal
+    3. Style feature extraction (caps, punctuation, sensational keywords)
+    """
+    
+    def __init__(self):
+        """Initialize preprocessor with NLTK tools"""
+        try:
+            self.lemmatizer = WordNetLemmatizer()
+            self.stop_words = set(stopwords.words('english'))
+            # Keep negations - they're important for credibility
+            self.stop_words -= {'not', 'no', 'never', 'against'}
+        except Exception as e:
+            # Fallback if NLTK data missing
+            self.lemmatizer = None
+            self.stop_words = set()
+    
+    def clean(self, text: str) -> str:
+        """
+        Stage 1: Basic text cleaning
+        - Lowercase
+        - Remove URLs, emails, HTML tags, mentions, hashtags
+        - Keep only letters and punctuation
+        """
+        if not text or pd.isna(text):
+            return ""
+        
+        text = str(text).lower()
+        
+        # Remove URLs, emails, HTML tags, mentions, hashtags
+        text = re.sub(r'http\S+|www\S+|\S+@\S+|<[^>]+>|@\w+|#\w+', '', text)
+        
+        # Keep only letters and punctuation
+        text = re.sub(r'[^a-z\s\.\!\?]', ' ', text)
+        
+        # Remove extra whitespace
+        text = ' '.join(text.split())
+        
+        return text
+    
+    def lemmatize(self, text: str) -> str:
+        """
+        Stage 2: Lemmatization and stopword removal
+        - Tokenize
+        - Lemmatize each token
+        - Remove stopwords (except negations)
+        """
+        if not text or self.lemmatizer is None:
+            return text
+        
+        try:
+            tokens = word_tokenize(text)
+            # Filter: remove stopwords, keep words > 2 chars
+            tokens = [
+                self.lemmatizer.lemmatize(w) for w in tokens
+                if w not in self.stop_words and len(w) > 2
+            ]
+            return ' '.join(tokens)
+        except Exception:
+            # Fallback - return original text
+            return text
+    
+    def add_style_features(self, text: str) -> str:
+        """
+        Stage 3: Extract style features for credibility detection
+        Detects:
+        - Multiple exclamation marks (sensationalism)
+        - Multiple question marks (clickbait)
+        - High capitalization (tabloid style)
+        - Sensational keywords (EXCLUSIVE, SHOCK, BOMBSHELL)
+        """
+        if not text:
+            return ""
+        
+        text_str = str(text)
+        features = []
+        
+        # Punctuation patterns indicating sensationalism
+        if text_str.count('!') > 2:
+            features.append('_MULTIEXCLAIM_')
+        
+        if text_str.count('?') > 2:
+            features.append('_MULTIQUESTION_')
+        
+        # Capitalization ratio
+        caps_ratio = sum(1 for c in text_str if c.isupper()) / (len(text_str) + 1)
+        if caps_ratio > 0.05:  # More than 5% caps
+            features.append('_HIGHCAPS_')
+        
+        # Sensational keywords
+        sensational_words = [
+            'exclusive', 'shocking', 'bombshell', 'revealed',
+            'slammed', 'blasts', 'stunning', 'massive'
+        ]
+        for word in sensational_words:
+            if word in text_str.lower():
+                features.append(f'_SENSATIONAL_{word.upper()}_')
+        
+        return ' '.join(features)
+    
+    def transform(self, texts):
+        """
+        Process list of texts through all stages
+        
+        Args:
+            texts: List of strings to preprocess
+            
+        Returns:
+            List of preprocessed strings
+        """
+        results = []
+        for text in texts:
+            # Stage 1: Clean
+            cleaned = self.clean(text)
+            
+            # Stage 2: Lemmatize
+            lemmatized = self.lemmatize(cleaned)
+            
+            # Stage 3: Add style features
+            style = self.add_style_features(text)
+            
+            # Combine all stages
+            processed = f"{lemmatized} {style}".strip()
+            results.append(processed)
+        
+        return results
