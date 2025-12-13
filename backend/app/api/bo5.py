@@ -8,6 +8,7 @@ import pandas as pd
 
 from app.schemas.responses import NewsCredibilityResponse, NewsTierProbability
 from app.core.model_loader import load_naive_bayes_news_classifier
+from app.core.preprocessing import TextPreprocessor
 from pathlib import Path
 
 DATA_PATH = Path(__file__).parent.parent / 'data' / 'processed' / 'pl_news.csv'
